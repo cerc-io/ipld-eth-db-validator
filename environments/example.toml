@@ -7,4 +7,4 @@
 
 [validate]
     block-height = 1
-    trail  = 3100
+    trail  = 10

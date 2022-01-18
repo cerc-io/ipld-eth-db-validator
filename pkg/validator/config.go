@@ -2,11 +2,16 @@ package validator
 
 import (
 	"fmt"
+	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/statediff/indexer/node"
 	"github.com/ethereum/go-ethereum/statediff/indexer/postgres"
 	"github.com/spf13/viper"
 )
+
+var TestChainConfig = &params.ChainConfig{big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(100), big.NewInt(0), nil, nil, new(params.EthashConfig), nil}
 
 type Config struct {
 	dbParams postgres.ConnectionParams
