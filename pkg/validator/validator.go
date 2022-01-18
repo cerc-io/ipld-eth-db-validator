@@ -51,7 +51,7 @@ func NewEthBackend(db *postgres.DB, c *ipldEth.Config) (*ipldEth.Backend, error)
 		ExpiryDuration: time.Minute * time.Duration(gcc.StateDB.CacheExpiryInMins),
 	})
 
-	customEthDB := NewDatabase(ethDB)
+	customEthDB := newDatabase(ethDB)
 
 	return &ipldEth.Backend{
 		DB:            db,
