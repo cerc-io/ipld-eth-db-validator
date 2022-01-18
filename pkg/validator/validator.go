@@ -260,7 +260,7 @@ func setChainConfig(ghash common.Hash) *params.ChainConfig {
 	case ghash == params.GoerliGenesisHash:
 		return params.GoerliChainConfig
 	case ghash == testHash:
-		return TestChainConfig
+		return testChainConfig
 	default:
 		return params.AllEthashProtocolChanges
 	}
