@@ -1,4 +1,4 @@
-package test
+package validator_test_test
 
 import (
 	"context"
@@ -16,16 +16,16 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/ipld-eth-server/pkg/eth"
-
 	"github.com/vulcanize/ipld-eth-server/pkg/eth/test_helpers"
 
 	"github.com/Vulcanize/ipld-eth-db-validator/pkg/validator"
+	"github.com/Vulcanize/ipld-eth-db-validator/validator_test"
 )
 
 const (
 	chainLength = 20
 	blockHeight = 1
-	trail       = 15
+	trail       = 2
 )
 
 // SetupDB is use to setup a db for watcher tests
@@ -34,8 +34,8 @@ func setupDB() (*postgres.DB, error) {
 		User:     "vdbm",
 		Password: "password",
 		Hostname: "localhost",
-		Name:     "vulcanize_public",
-		Port:     5432,
+		Name:     "vulcanize_testing",
+		Port:     8077,
 	})
 	return postgres.NewDB(uri, postgres.ConnectionConfig{}, node.Info{})
 }
@@ -59,7 +59,7 @@ var _ = Describe("eth state reading tests", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		// make the test blockchain (and state)
-		blocks, receipts, chain = test_helpers.MakeChain(chainLength, test_helpers.Genesis, test_helpers.TestChainGen)
+		blocks, receipts, chain = validator_test.MakeChain(chainLength, test_helpers.Genesis, validator_test.TestChainGen)
 		params := statediff.Params{
 			IntermediateStateNodes:   true,
 			IntermediateStorageNodes: true,
@@ -134,7 +134,7 @@ var _ = Describe("eth state reading tests", func() {
 
 	Describe("state_validation", func() {
 		It("Validator", func() {
-			srvc := validator.NewService(db, blockHeight, trail)
+			srvc := validator.NewService(db, blockHeight, trail, validator.TestChainConfig)
 
 			_, err := srvc.Start(context.Background())
 			Expect(err).ToNot(HaveOccurred())

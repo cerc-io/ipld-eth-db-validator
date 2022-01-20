@@ -27,23 +27,24 @@ import (
 )
 
 var (
-	big8     = big.NewInt(8)
-	big32    = big.NewInt(32)
-	testHash = common.HexToHash("0x1283a0bca5cce009bcf3e5a860eccdc202d1345f464024f2ee8ea1e1254349e7")
+	big8  = big.NewInt(8)
+	big32 = big.NewInt(32)
 )
 
 type service struct {
 	db              *postgres.DB
 	blockNum, trail uint64
 	logger          *log.Logger
+	chainCfg        *params.ChainConfig
 }
 
-func NewService(db *postgres.DB, blockNum, trailNum uint64) *service {
+func NewService(db *postgres.DB, blockNum, trailNum uint64, chainCfg *params.ChainConfig) *service {
 	return &service{
 		db:       db,
 		blockNum: blockNum,
 		trail:    trailNum,
 		logger:   log.New(),
+		chainCfg: chainCfg,
 	}
 }
 
@@ -96,7 +97,7 @@ func NewDB(connectString string, config postgres.ConnectionConfig, node node.Inf
 
 // Start is used to begin the service
 func (s *service) Start(ctx context.Context) (uint64, error) {
-	api, err := ethAPI(ctx, s.db)
+	api, err := ethAPI(ctx, s.db, s.chainCfg)
 	if err != nil {
 		return 0, err
 	}
@@ -126,7 +127,6 @@ func (s *service) Start(ctx context.Context) (uint64, error) {
 
 		s.logger.Infof("state root verified for block= %d", idxBlockNum)
 
-		// again fetch head block
 		headBlock, err = api.B.BlockByNumber(ctx, rpc.LatestBlockNumber)
 		if err != nil {
 			return idxBlockNum, err
@@ -136,14 +136,14 @@ func (s *service) Start(ctx context.Context) (uint64, error) {
 		idxBlockNum++
 	}
 
-	s.logger.Infof("last validated block %v", idxBlockNum)
-
+	s.logger.Infof("last validated block %v", idxBlockNum-1)
 	return idxBlockNum, nil
 }
 
-func ethAPI(ctx context.Context, db *postgres.DB) (*ipldEth.PublicEthAPI, error) {
+func ethAPI(ctx context.Context, db *postgres.DB, chainCfg *params.ChainConfig) (*ipldEth.PublicEthAPI, error) {
 	// TODO: decide network for custom chainConfig.
 	backend, err := NewEthBackend(db, &ipldEth.Config{
+		ChainConfig: chainCfg,
 		GroupCacheConfig: &ethServerShared.GroupCacheConfig{
 			StateDB: ethServerShared.GroupConfig{
 				Name: "vulcanize_validator",
@@ -161,7 +161,6 @@ func ethAPI(ctx context.Context, db *postgres.DB) (*ipldEth.PublicEthAPI, error)
 		if err != nil {
 			return nil, err
 		}
-
 		backend.Config.ChainConfig = setChainConfig(genesisBlock.Hash())
 	}
 
@@ -259,8 +258,6 @@ func setChainConfig(ghash common.Hash) *params.ChainConfig {
 		return params.RinkebyChainConfig
 	case ghash == params.GoerliGenesisHash:
 		return params.GoerliChainConfig
-	case ghash == testHash:
-		return testChainConfig
 	default:
 		return params.AllEthashProtocolChanges
 	}

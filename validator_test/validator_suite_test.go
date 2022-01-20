@@ -1,4 +1,4 @@
-package test
+package validator_test_test
 
 import (
 	"io/ioutil"

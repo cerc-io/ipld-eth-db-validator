@@ -36,7 +36,8 @@ func stateValidator() {
 	}
 
 	trail := viper.GetUint64("validate.trail")
-	srvc := validator.NewService(cfg.DB, height, trail)
+	// TODO: add chain config logic here.
+	srvc := validator.NewService(cfg.DB, height, trail, nil)
 
 	_, err = srvc.Start(context.Background())
 	if err != nil {
