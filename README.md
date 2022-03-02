@@ -1,3 +1,5 @@
+# Validator-README
+
 # Overview
 
 This repository contains the validator. The purpose of the validator is to ensure that the data in the Core Postgres database match the data on the blockchain.
@@ -7,8 +9,8 @@ This repository contains the validator. The purpose of the validator is to ensur
 The perfect scenario for the validator is as follows:
 
 1. The validator will have the capacity to perform historical checks for the Core Postgres database. Users can contain these historical checks to specified configurations (block range).
-2. The validator will perform validation for a certain number of trailing blocks, `t`, trailing the head, `n`. Therefore the validator will constantly perform real-time validation starting at `n` and ending at `n - t`.
-3. The validator validates IDLP blocks in the Core Database; it will update the core database to indicate that the validator validated the block.
+2. The validator will validate a certain number of trailing blocks, `t`, trailing the head, `n`. Therefore the validator will constantly perform real-time validation starting at `n` and ending at `n - t`.
+3. The validator validates the IPLD blocks in the Core Database; it will update the core database to indicate that the validator validated it.
 
 ## Edge Cases
 
