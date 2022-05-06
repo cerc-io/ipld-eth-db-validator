@@ -17,8 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ethereum/go-ethereum/statediff/indexer/node"
-	"github.com/ethereum/go-ethereum/statediff/indexer/postgres"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 	ipfsethdb "github.com/vulcanize/ipfs-ethdb/postgres"
@@ -32,13 +30,13 @@ var (
 )
 
 type service struct {
-	db              *postgres.DB
+	db              *sqlx.DB
 	blockNum, trail uint64
 	logger          *log.Logger
 	chainCfg        *params.ChainConfig
 }
 
-func NewService(db *postgres.DB, blockNum, trailNum uint64, chainCfg *params.ChainConfig) *service {
+func NewService(db *sqlx.DB, blockNum, trailNum uint64, chainCfg *params.ChainConfig) *service {
 	return &service{
 		db:       db,
 		blockNum: blockNum,
@@ -48,7 +46,7 @@ func NewService(db *postgres.DB, blockNum, trailNum uint64, chainCfg *params.Cha
 	}
 }
 
-func NewEthBackend(db *postgres.DB, c *ipldEth.Config) (*ipldEth.Backend, error) {
+func NewEthBackend(db *sqlx.DB, c *ipldEth.Config) (*ipldEth.Backend, error) {
 	gcc := c.GroupCacheConfig
 
 	groupName := gcc.StateDB.Name
@@ -57,12 +55,13 @@ func NewEthBackend(db *postgres.DB, c *ipldEth.Config) (*ipldEth.Backend, error)
 	}
 
 	r := ipldEth.NewCIDRetriever(db)
-	ethDB := ipfsethdb.NewDatabase(db.DB, ipfsethdb.CacheConfig{
+	ethDB := ipfsethdb.NewDatabase(db, ipfsethdb.CacheConfig{
 		Name:           groupName,
 		Size:           gcc.StateDB.CacheSizeInMB * 1024 * 1024,
 		ExpiryDuration: time.Minute * time.Duration(gcc.StateDB.CacheExpiryInMins),
 	})
 
+	// Read only wrapper around ipfs-ethdb eth.Database implementation
 	customEthDB := newDatabase(ethDB)
 
 	return &ipldEth.Backend{
@@ -76,25 +75,6 @@ func NewEthBackend(db *postgres.DB, c *ipldEth.Config) (*ipldEth.Backend, error)
 	}, nil
 }
 
-func NewDB(connectString string, config postgres.ConnectionConfig, node node.Info) (*postgres.DB, error) {
-	db, connectErr := sqlx.Connect("postgres", connectString)
-	if connectErr != nil {
-		return &postgres.DB{}, postgres.ErrDBConnectionFailed(connectErr)
-	}
-	if config.MaxOpen > 0 {
-		db.SetMaxOpenConns(config.MaxOpen)
-	}
-	if config.MaxIdle > 0 {
-		db.SetMaxIdleConns(config.MaxIdle)
-	}
-	if config.MaxLifetime > 0 {
-		lifetime := time.Duration(config.MaxLifetime) * time.Second
-		db.SetConnMaxLifetime(lifetime)
-	}
-	pg := postgres.DB{DB: db, Node: node}
-	return &pg, nil
-}
-
 // Start is used to begin the service
 func (s *service) Start(ctx context.Context) (uint64, error) {
 	api, err := ethAPI(ctx, s.db, s.chainCfg)
@@ -106,6 +86,7 @@ func (s *service) Start(ctx context.Context) (uint64, error) {
 	headBlock, _ := api.B.BlockByNumber(ctx, rpc.LatestBlockNumber)
 	headBlockNum := headBlock.NumberU64()
 
+	fmt.Println("#########", headBlockNum, s.trail, idxBlockNum)
 	for headBlockNum-s.trail >= idxBlockNum {
 		validateBlock, err := api.B.BlockByNumber(ctx, rpc.BlockNumber(idxBlockNum))
 		if err != nil {
@@ -125,7 +106,7 @@ func (s *service) Start(ctx context.Context) (uint64, error) {
 			return idxBlockNum, fmt.Errorf("failed to verify state root at block")
 		}
 
-		s.logger.Infof("state root verified for block= %d", idxBlockNum)
+		s.logger.Infof("state root verified for block %d", idxBlockNum)
 
 		headBlock, err = api.B.BlockByNumber(ctx, rpc.LatestBlockNumber)
 		if err != nil {
@@ -140,7 +121,7 @@ func (s *service) Start(ctx context.Context) (uint64, error) {
 	return idxBlockNum, nil
 }
 
-func ethAPI(ctx context.Context, db *postgres.DB, chainCfg *params.ChainConfig) (*ipldEth.PublicEthAPI, error) {
+func ethAPI(ctx context.Context, db *sqlx.DB, chainCfg *params.ChainConfig) (*ipldEth.PublicEthAPI, error) {
 	// TODO: decide network for custom chainConfig.
 	backend, err := NewEthBackend(db, &ipldEth.Config{
 		ChainConfig: chainCfg,

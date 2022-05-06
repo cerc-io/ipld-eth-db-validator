@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/Vulcanize/ipld-eth-db-validator/pkg/validator"
+	"github.com/vulcanize/ipld-eth-db-validator/pkg/validator"
 )
 
 // stateValidatorCmd represents the stateValidator command

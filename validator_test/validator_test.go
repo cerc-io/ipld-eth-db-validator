@@ -9,17 +9,15 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/statediff"
-	"github.com/ethereum/go-ethereum/statediff/indexer"
-	"github.com/ethereum/go-ethereum/statediff/indexer/node"
-	"github.com/ethereum/go-ethereum/statediff/indexer/postgres"
 	sdtypes "github.com/ethereum/go-ethereum/statediff/types"
+	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/ipld-eth-server/pkg/eth"
 	"github.com/vulcanize/ipld-eth-server/pkg/eth/test_helpers"
 
-	"github.com/Vulcanize/ipld-eth-db-validator/pkg/validator"
-	"github.com/Vulcanize/ipld-eth-db-validator/validator_test"
+	"github.com/vulcanize/ipld-eth-db-validator/pkg/validator"
+	"github.com/vulcanize/ipld-eth-db-validator/validator_test"
 )
 
 const (
@@ -28,35 +26,19 @@ const (
 	trail       = 2
 )
 
-// SetupDB is use to setup a db for watcher tests
-func setupDB() (*postgres.DB, error) {
-	uri := postgres.DbConnectionString(postgres.ConnectionParams{
-		User:     "vdbm",
-		Password: "password",
-		Hostname: "localhost",
-		Name:     "vulcanize_testing",
-		Port:     8077,
-	})
-	return postgres.NewDB(uri, postgres.ConnectionConfig{}, node.Info{})
-}
-
 var _ = Describe("eth state reading tests", func() {
 	var (
 		blocks      []*types.Block
 		receipts    []types.Receipts
 		chain       *core.BlockChain
-		db          *postgres.DB
+		db          *sqlx.DB
 		chainConfig = params.TestChainConfig
 		mockTD      = big.NewInt(1337)
-		err         error
 	)
 
 	It("test init", func() {
-		db, err = setupDB()
-		Expect(err).ToNot(HaveOccurred())
-
-		transformer, err := indexer.NewStateDiffIndexer(chainConfig, db)
-		Expect(err).ToNot(HaveOccurred())
+		db = eth.SetupTestDB()
+		transformer := eth.SetupTestStateDiffIndexer(context.Background(), chainConfig, test_helpers.Genesis.Hash())
 
 		// make the test blockchain (and state)
 		blocks, receipts, chain = validator_test.MakeChain(chainLength, test_helpers.Genesis, validator_test.TestChainGen)
@@ -93,22 +75,21 @@ var _ = Describe("eth state reading tests", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			for _, node := range diff.Nodes {
-				err = transformer.PushStateNode(tx, node)
+				err := transformer.PushStateNode(tx, node, block.Hash().String())
 				Expect(err).ToNot(HaveOccurred())
 			}
 
-			err = tx.Close(err)
+			err = tx.Submit(err)
 			Expect(err).ToNot(HaveOccurred())
 		}
 
 		// Insert some non-canonical data into the database so that we test our ability to discern canonicity
-		indexAndPublisher, err := indexer.NewStateDiffIndexer(chainConfig, db)
-		Expect(err).ToNot(HaveOccurred())
+		indexAndPublisher := eth.SetupTestStateDiffIndexer(context.Background(), chainConfig, test_helpers.Genesis.Hash())
 
 		tx, err := indexAndPublisher.PushBlock(test_helpers.MockBlock, test_helpers.MockReceipts, test_helpers.MockBlock.Difficulty())
 		Expect(err).ToNot(HaveOccurred())
 
-		err = tx.Close(err)
+		err = tx.Submit(err)
 		Expect(err).ToNot(HaveOccurred())
 
 		// The non-canonical header has a child
@@ -123,12 +104,12 @@ var _ = Describe("eth state reading tests", func() {
 		err = indexAndPublisher.PushCodeAndCodeHash(tx, hash)
 		Expect(err).ToNot(HaveOccurred())
 
-		err = tx.Close(err)
+		err = tx.Submit(err)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	defer It("test teardown", func() {
-		eth.TearDownDB(db)
+		eth.TearDownTestDB(db)
 		chain.Stop()
 	})
 

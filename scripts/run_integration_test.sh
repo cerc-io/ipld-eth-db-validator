@@ -20,4 +20,4 @@ export DATABASE_HOSTNAME=127.0.0.1
 
 # Wait for containers to be up and execute the integration test.
 while [ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:8545)" != "200" ]; do echo "waiting for geth-statediff..." && sleep 5; done && \
-        make integrationtest_blockchain
+        make integrationtest

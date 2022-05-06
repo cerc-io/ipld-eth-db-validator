@@ -14,8 +14,8 @@ integrationtest: | $(GINKGO) $(GOOSE)
 	go fmt ./...
 	$(GINKGO) -r test/ -v
 
-.PHONY: integrationtest_blockchain
-integrationtest_blockchain: | $(GINKGO) $(GOOSE)
+.PHONY: test
+test: | $(GINKGO) $(GOOSE)
 	go vet ./...
 	go fmt ./...
 	$(GINKGO) -r validator_test/ -v

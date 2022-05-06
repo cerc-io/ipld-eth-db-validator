@@ -14,7 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/Vulcanize/ipld-eth-db-validator/pkg/validator"
+	"github.com/vulcanize/ipld-eth-db-validator/pkg/validator"
 )
 
 // Test variables
