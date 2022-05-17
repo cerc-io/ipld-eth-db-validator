@@ -7,7 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/statediff"
 	sdtypes "github.com/ethereum/go-ethereum/statediff/types"
 	"github.com/jmoiron/sqlx"
@@ -32,16 +31,16 @@ var _ = Describe("eth state reading tests", func() {
 		receipts    []types.Receipts
 		chain       *core.BlockChain
 		db          *sqlx.DB
-		chainConfig = params.TestChainConfig
+		chainConfig = validator.TestChainConfig
 		mockTD      = big.NewInt(1337)
 	)
 
 	It("test init", func() {
 		db = eth.SetupTestDB()
-		transformer := eth.SetupTestStateDiffIndexer(context.Background(), chainConfig, test_helpers.Genesis.Hash())
+		transformer := eth.SetupTestStateDiffIndexer(context.Background(), chainConfig, validator_test.Genesis.Hash())
 
 		// make the test blockchain (and state)
-		blocks, receipts, chain = validator_test.MakeChain(chainLength, test_helpers.Genesis, validator_test.TestChainGen)
+		blocks, receipts, chain = validator_test.MakeChain(chainLength, validator_test.Genesis, validator_test.TestChainGen)
 		params := statediff.Params{
 			IntermediateStateNodes:   true,
 			IntermediateStorageNodes: true,
@@ -84,7 +83,7 @@ var _ = Describe("eth state reading tests", func() {
 		}
 
 		// Insert some non-canonical data into the database so that we test our ability to discern canonicity
-		indexAndPublisher := eth.SetupTestStateDiffIndexer(context.Background(), chainConfig, test_helpers.Genesis.Hash())
+		indexAndPublisher := eth.SetupTestStateDiffIndexer(context.Background(), chainConfig, validator_test.Genesis.Hash())
 
 		tx, err := indexAndPublisher.PushBlock(test_helpers.MockBlock, test_helpers.MockReceipts, test_helpers.MockBlock.Difficulty())
 		Expect(err).ToNot(HaveOccurred())

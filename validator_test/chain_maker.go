@@ -70,7 +70,7 @@ func createLondonTransaction(block *core.BlockGen, addr *common.Address, key *ec
 func MakeChain(n int, parent *types.Block, chainGen func(int, *core.BlockGen)) ([]*types.Block, []types.Receipts, *core.BlockChain) {
 	config := validator.TestChainConfig
 	blocks, receipts := core.GenerateChain(config, parent, ethash.NewFaker(), Testdb, n, chainGen)
-	chain, _ := core.NewBlockChain(Testdb, nil, params.TestChainConfig, ethash.NewFaker(), vm.Config{}, nil, nil)
+	chain, _ := core.NewBlockChain(Testdb, nil, validator.TestChainConfig, ethash.NewFaker(), vm.Config{}, nil, nil)
 	return append([]*types.Block{parent}, blocks...), receipts, chain
 }
 
@@ -111,7 +111,6 @@ func TestChainGen(i int, block *core.BlockGen) {
 		block.AddTx(tx)
 	case 5:
 		block.AddTx(createLondonTransaction(block, &Account1Addr, Account1Key))
-
 	case 6:
 		block.AddTx(createLondonTransaction(block, &Account2Addr, Account2Key))
 	}
