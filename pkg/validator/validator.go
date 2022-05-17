@@ -86,7 +86,6 @@ func (s *service) Start(ctx context.Context) (uint64, error) {
 	headBlock, _ := api.B.BlockByNumber(ctx, rpc.LatestBlockNumber)
 	headBlockNum := headBlock.NumberU64()
 
-	fmt.Println("#########", headBlockNum, s.trail, idxBlockNum)
 	for headBlockNum-s.trail >= idxBlockNum {
 		validateBlock, err := api.B.BlockByNumber(ctx, rpc.BlockNumber(idxBlockNum))
 		if err != nil {
