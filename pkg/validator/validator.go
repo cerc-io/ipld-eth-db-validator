@@ -19,9 +19,9 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
-	ipfsethdb "github.com/vulcanize/ipfs-ethdb/postgres"
-	ipldEth "github.com/vulcanize/ipld-eth-server/pkg/eth"
-	ethServerShared "github.com/vulcanize/ipld-eth-server/pkg/shared"
+	ipfsethdb "github.com/vulcanize/ipfs-ethdb/v3/postgres"
+	ipldEth "github.com/vulcanize/ipld-eth-server/v3/pkg/eth"
+	ethServerShared "github.com/vulcanize/ipld-eth-server/v3/pkg/shared"
 )
 
 var (

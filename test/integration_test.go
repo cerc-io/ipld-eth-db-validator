@@ -11,8 +11,8 @@ import (
 
 	"github.com/vulcanize/ipld-eth-db-validator/pkg/validator"
 
-	"github.com/vulcanize/ipld-eth-server/pkg/eth"
-	integration "github.com/vulcanize/ipld-eth-server/test"
+	"github.com/vulcanize/ipld-eth-server/v3/pkg/shared"
+	integration "github.com/vulcanize/ipld-eth-server/v3/test"
 )
 
 const trail = 0
@@ -40,7 +40,7 @@ var _ = Describe("Integration test", func() {
 		It("Validate state root", func() {
 			Expect(contractErr).ToNot(HaveOccurred())
 
-			db := eth.SetupTestDB()
+			db := shared.SetupDB()
 			srvc := validator.NewService(db, uint64(contract.BlockNumber), trail, validator.IntegrationTestChainConfig)
 			_, err = srvc.Start(ctx)
 			Expect(err).ToNot(HaveOccurred())

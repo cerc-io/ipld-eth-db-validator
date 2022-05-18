@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/statediff"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
 	"github.com/vulcanize/ipld-eth-db-validator/pkg/validator"
-	"github.com/vulcanize/ipld-eth-server/pkg/eth"
 )
 
 // stateValidatorCmd represents the stateValidator command
@@ -38,7 +38,7 @@ func stateValidator() {
 	trail := viper.GetUint64("validate.trail")
 
 	chainConfigPath := viper.GetString("ethereum.chainConfig")
-	chainCfg, err := eth.LoadConfig(chainConfigPath)
+	chainCfg, err := statediff.LoadConfig(chainConfigPath)
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
