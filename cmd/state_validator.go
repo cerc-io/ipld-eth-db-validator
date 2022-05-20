@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/statediff"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/Vulcanize/ipld-eth-db-validator/pkg/validator"
+	"github.com/vulcanize/ipld-eth-db-validator/pkg/validator"
 )
 
 // stateValidatorCmd represents the stateValidator command
@@ -34,10 +35,15 @@ func stateValidator() {
 	if height < 1 {
 		logWithCommand.Fatalf("block height cannot be less the 1")
 	}
-
 	trail := viper.GetUint64("validate.trail")
-	// TODO: add chain config logic here.
-	srvc := validator.NewService(cfg.DB, height, trail, nil)
+
+	chainConfigPath := viper.GetString("ethereum.chainConfig")
+	chainCfg, err := statediff.LoadConfig(chainConfigPath)
+	if err != nil {
+		logWithCommand.Fatal(err)
+	}
+
+	srvc := validator.NewService(cfg.DB, height, trail, chainCfg)
 
 	_, err = srvc.Start(context.Background())
 	if err != nil {
@@ -53,8 +59,12 @@ func init() {
 	stateValidatorCmd.PersistentFlags().String("block-height", "1", "block height to initiate state validation")
 	stateValidatorCmd.PersistentFlags().String("trail", "0", "trail of block height to validate")
 
+	stateValidatorCmd.PersistentFlags().String("chain-config", "", "path to chain config")
+
 	_ = viper.BindPFlag("validate.block-height", stateValidatorCmd.PersistentFlags().Lookup("block-height"))
 	_ = viper.BindPFlag("validate.trail", stateValidatorCmd.PersistentFlags().Lookup("trail"))
+
+	_ = viper.BindPFlag("ethereum.chainConfig", stateValidatorCmd.PersistentFlags().Lookup("chain-config"))
 }
 
 func initConfig() {

@@ -2,30 +2,20 @@ package integration_test
 
 import (
 	"context"
-	"os"
-	"strconv"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/statediff/indexer/node"
-	"github.com/ethereum/go-ethereum/statediff/indexer/postgres"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/Vulcanize/ipld-eth-db-validator/pkg/validator"
+	"github.com/vulcanize/ipld-eth-db-validator/pkg/validator"
 
-	integration "github.com/vulcanize/ipld-eth-server/test"
+	"github.com/vulcanize/ipld-eth-server/v3/pkg/shared"
+	integration "github.com/vulcanize/ipld-eth-server/v3/test"
 )
 
 const trail = 0
 
-var randomAddr = common.HexToAddress("0x1C3ab14BBaD3D99F4203bd7a11aCB94882050E6f")
-
 var _ = Describe("Integration test", func() {
-	directProxyEthCalls, err := strconv.ParseBool(os.Getenv("ETH_FORWARD_ETH_CALLS"))
-	Expect(err).To(BeNil())
-
-	Expect(err).ToNot(HaveOccurred())
 	ctx := context.Background()
 
 	var contract *integration.ContractDeployed
@@ -34,9 +24,10 @@ var _ = Describe("Integration test", func() {
 
 	Describe("Validate state", func() {
 		BeforeEach(func() {
-			if directProxyEthCalls {
-				Skip("skipping no-direct-proxy-forwarding integration tests")
-			}
+			// Deploy a dummy contract as the first contract might get deployed at block number 0
+			_, _ = integration.DeployContract()
+			time.Sleep(sleepInterval)
+
 			contract, contractErr = integration.DeployContract()
 			time.Sleep(sleepInterval)
 		})
@@ -44,22 +35,10 @@ var _ = Describe("Integration test", func() {
 		It("Validate state root", func() {
 			Expect(contractErr).ToNot(HaveOccurred())
 
-			db, _ := setupDB()
+			db := shared.SetupDB()
 			srvc := validator.NewService(db, uint64(contract.BlockNumber), trail, validator.IntegrationTestChainConfig)
-			_, err = srvc.Start(ctx)
+			_, err := srvc.Start(ctx)
 			Expect(err).ToNot(HaveOccurred())
-
 		})
 	})
 })
-
-func setupDB() (*postgres.DB, error) {
-	uri := postgres.DbConnectionString(postgres.ConnectionParams{
-		User:     "vdbm",
-		Password: "password",
-		Hostname: "localhost",
-		Name:     "vulcanize_testing",
-		Port:     8077,
-	})
-	return validator.NewDB(uri, postgres.ConnectionConfig{}, node.Info{})
-}

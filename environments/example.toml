@@ -8,3 +8,6 @@
 [validate]
     block-height = 1
     trail  = 10
+
+[ethereum]
+    chainConfig = "./chain.json"
