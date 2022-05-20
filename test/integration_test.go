@@ -2,8 +2,6 @@ package integration_test
 
 import (
 	"context"
-	"os"
-	"strconv"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -18,10 +16,6 @@ import (
 const trail = 0
 
 var _ = Describe("Integration test", func() {
-	directProxyEthCalls, err := strconv.ParseBool(os.Getenv("ETH_FORWARD_ETH_CALLS"))
-	Expect(err).To(BeNil())
-
-	Expect(err).ToNot(HaveOccurred())
 	ctx := context.Background()
 
 	var contract *integration.ContractDeployed
@@ -30,9 +24,10 @@ var _ = Describe("Integration test", func() {
 
 	Describe("Validate state", func() {
 		BeforeEach(func() {
-			if directProxyEthCalls {
-				Skip("skipping no-direct-proxy-forwarding integration tests")
-			}
+			// Deploy a dummy contract as the first contract might get deployed at block number 0
+			_, _ = integration.DeployContract()
+			time.Sleep(sleepInterval)
+
 			contract, contractErr = integration.DeployContract()
 			time.Sleep(sleepInterval)
 		})
@@ -42,7 +37,7 @@ var _ = Describe("Integration test", func() {
 
 			db := shared.SetupDB()
 			srvc := validator.NewService(db, uint64(contract.BlockNumber), trail, validator.IntegrationTestChainConfig)
-			_, err = srvc.Start(ctx)
+			_, err := srvc.Start(ctx)
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})

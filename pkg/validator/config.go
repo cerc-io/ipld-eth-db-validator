@@ -24,7 +24,7 @@ var (
 )
 
 var IntegrationTestChainConfig = &params.ChainConfig{
-	ChainID:             big.NewInt(4),
+	ChainID:             big.NewInt(99),
 	HomesteadBlock:      big.NewInt(0),
 	EIP150Block:         big.NewInt(0),
 	EIP155Block:         big.NewInt(0),

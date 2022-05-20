@@ -31,11 +31,7 @@ We must consider the following edge cases for the validator.
 
 # Instructions for Testing
 
-To run the test, do the following:
-
-1. Make sure `GOPATH` is set in your `~/.bashrc` or `~/.bash_profile`: `export GOPATH=$(go env GOPATH)`
-2. `./scripts/run_unit_test.sh`
-3. `./scripts/run_integration_test.sh`
+Follow steps in [test/README.md](./test/README.md)
 
 # Code Overview
 
