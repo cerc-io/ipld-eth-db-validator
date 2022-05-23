@@ -12,8 +12,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/ipld-eth-server/v3/pkg/eth/test_helpers"
-	"github.com/vulcanize/ipld-eth-server/v3/pkg/shared"
+	"github.com/vulcanize/ipld-eth-server/v4/pkg/eth/test_helpers"
+	"github.com/vulcanize/ipld-eth-server/v4/pkg/shared"
 
 	"github.com/vulcanize/ipld-eth-db-validator/pkg/validator"
 	"github.com/vulcanize/ipld-eth-db-validator/validator_test"
