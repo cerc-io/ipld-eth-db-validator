@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/statediff/indexer/database/sql/postgres"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
-	"github.com/vulcanize/ipld-eth-server/v3/pkg/shared"
+	"github.com/vulcanize/ipld-eth-server/v4/pkg/shared"
 )
 
 var (

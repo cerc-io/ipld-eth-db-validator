@@ -9,8 +9,8 @@ import (
 
 	"github.com/vulcanize/ipld-eth-db-validator/pkg/validator"
 
-	"github.com/vulcanize/ipld-eth-server/v3/pkg/shared"
-	integration "github.com/vulcanize/ipld-eth-server/v3/test"
+	"github.com/vulcanize/ipld-eth-server/v4/pkg/shared"
+	integration "github.com/vulcanize/ipld-eth-server/v4/test"
 )
 
 const trail = 0
