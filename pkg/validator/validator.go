@@ -32,17 +32,19 @@ var (
 type service struct {
 	db              *sqlx.DB
 	blockNum, trail uint64
+	sleepInterval   uint
 	logger          *log.Logger
 	chainCfg        *params.ChainConfig
 }
 
-func NewService(db *sqlx.DB, blockNum, trailNum uint64, chainCfg *params.ChainConfig) *service {
+func NewService(db *sqlx.DB, blockNum, trailNum uint64, sleepInterval uint, chainCfg *params.ChainConfig) *service {
 	return &service{
-		db:       db,
-		blockNum: blockNum,
-		trail:    trailNum,
-		logger:   log.New(),
-		chainCfg: chainCfg,
+		db:            db,
+		blockNum:      blockNum,
+		trail:         trailNum,
+		sleepInterval: sleepInterval,
+		logger:        log.New(),
+		chainCfg:      chainCfg,
 	}
 }
 
@@ -102,7 +104,7 @@ func (s *service) Start(ctx context.Context) (uint64, error) {
 			idxBlockNum++
 		} else {
 			// Sleep / wait for head to move ahead
-			time.Sleep(time.Second * 5)
+			time.Sleep(time.Second * time.Duration(s.sleepInterval))
 		}
 	}
 

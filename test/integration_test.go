@@ -13,7 +13,10 @@ import (
 	integration "github.com/vulcanize/ipld-eth-server/v3/test"
 )
 
-const trail = 0
+const (
+	trail                  = 0
+	validatorSleepInterval = uint(5)
+)
 
 var _ = Describe("Integration test", func() {
 	ctx := context.Background()
@@ -36,7 +39,7 @@ var _ = Describe("Integration test", func() {
 			Expect(contractErr).ToNot(HaveOccurred())
 
 			db := shared.SetupDB()
-			srvc := validator.NewService(db, uint64(contract.BlockNumber), trail, validator.IntegrationTestChainConfig)
+			srvc := validator.NewService(db, uint64(contract.BlockNumber), trail, validatorSleepInterval, validator.IntegrationTestChainConfig)
 			_, err := srvc.Start(ctx)
 			Expect(err).ToNot(HaveOccurred())
 		})

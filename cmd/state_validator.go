@@ -36,6 +36,7 @@ func stateValidator() {
 		logWithCommand.Fatalf("block height cannot be less the 1")
 	}
 	trail := viper.GetUint64("validate.trail")
+	sleepInterval := viper.GetUint("validate.sleepInterval")
 
 	chainConfigPath := viper.GetString("ethereum.chainConfig")
 	chainCfg, err := statediff.LoadConfig(chainConfigPath)
@@ -43,7 +44,7 @@ func stateValidator() {
 		logWithCommand.Fatal(err)
 	}
 
-	srvc := validator.NewService(cfg.DB, height, trail, chainCfg)
+	srvc := validator.NewService(cfg.DB, height, trail, sleepInterval, chainCfg)
 
 	_, err = srvc.Start(context.Background())
 	if err != nil {
@@ -58,11 +59,13 @@ func init() {
 
 	stateValidatorCmd.PersistentFlags().String("block-height", "1", "block height to initiate state validation")
 	stateValidatorCmd.PersistentFlags().String("trail", "0", "trail of block height to validate")
+	stateValidatorCmd.PersistentFlags().String("sleep-interval", "5", "sleep interval in seconds after validator has caught up to head")
 
 	stateValidatorCmd.PersistentFlags().String("chain-config", "", "path to chain config")
 
 	_ = viper.BindPFlag("validate.block-height", stateValidatorCmd.PersistentFlags().Lookup("block-height"))
 	_ = viper.BindPFlag("validate.trail", stateValidatorCmd.PersistentFlags().Lookup("trail"))
+	_ = viper.BindPFlag("validate.sleepInterval", stateValidatorCmd.PersistentFlags().Lookup("sleep-interval"))
 
 	_ = viper.BindPFlag("ethereum.chainConfig", stateValidatorCmd.PersistentFlags().Lookup("chain-config"))
 }

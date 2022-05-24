@@ -8,6 +8,7 @@
 [validate]
     block-height = 1
     trail  = 10
+    sleepInterval = 5
 
 [ethereum]
     chainConfig = "./chain.json"
