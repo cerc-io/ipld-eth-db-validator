@@ -77,50 +77,61 @@ func NewEthBackend(db *sqlx.DB, c *ipldEth.Config) (*ipldEth.Backend, error) {
 
 // Start is used to begin the service
 func (s *service) Start(ctx context.Context) (uint64, error) {
-	api, err := ethAPI(ctx, s.db, s.chainCfg)
+	api, err := EthAPI(ctx, s.db, s.chainCfg)
 	if err != nil {
 		return 0, err
 	}
 
 	idxBlockNum := s.blockNum
-	headBlock, _ := api.B.BlockByNumber(ctx, rpc.LatestBlockNumber)
-	headBlockNum := headBlock.NumberU64()
 
-	for headBlockNum-s.trail >= idxBlockNum {
-		validateBlock, err := api.B.BlockByNumber(ctx, rpc.BlockNumber(idxBlockNum))
+	for {
+		headBlockNum, err := fetchHeadBlockNumber(ctx, api)
 		if err != nil {
 			return idxBlockNum, err
 		}
 
-		stateDB, err := applyTransaction(validateBlock, api.B)
-		if err != nil {
-			return idxBlockNum, err
+		// Check if it block at height idxBlockNum can be validated
+		if idxBlockNum <= headBlockNum-s.trail {
+			err = ValidateBlock(ctx, api, idxBlockNum)
+			if err != nil {
+				s.logger.Errorf("failed to verify state root at block %d", idxBlockNum)
+				return idxBlockNum, err
+			}
+
+			s.logger.Infof("state root verified for block %d", idxBlockNum)
+			idxBlockNum++
+		} else {
+			// Sleep / wait for head to move ahead
+			time.Sleep(time.Second * 5)
 		}
-
-		blockStateRoot := validateBlock.Header().Root.String()
-
-		dbStateRoot := stateDB.IntermediateRoot(true).String()
-		if blockStateRoot != dbStateRoot {
-			s.logger.Errorf("failed to verify state root at block %d", idxBlockNum)
-			return idxBlockNum, fmt.Errorf("failed to verify state root at block")
-		}
-
-		s.logger.Infof("state root verified for block %d", idxBlockNum)
-
-		headBlock, err = api.B.BlockByNumber(ctx, rpc.LatestBlockNumber)
-		if err != nil {
-			return idxBlockNum, err
-		}
-
-		headBlockNum = headBlock.NumberU64()
-		idxBlockNum++
 	}
 
-	s.logger.Infof("last validated block %v", idxBlockNum-1)
-	return idxBlockNum, nil
+	// s.logger.Infof("last validated block %v", idxBlockNum-1)
 }
 
-func ethAPI(ctx context.Context, db *sqlx.DB, chainCfg *params.ChainConfig) (*ipldEth.PublicEthAPI, error) {
+// ValidateBlock validates block at the given height
+func ValidateBlock(ctx context.Context, api *ipldEth.PublicEthAPI, blockNumber uint64) error {
+	blockToBeValidated, err := api.B.BlockByNumber(ctx, rpc.BlockNumber(blockNumber))
+	if err != nil {
+		return err
+	}
+
+	stateDB, err := applyTransaction(blockToBeValidated, api.B)
+	if err != nil {
+		return err
+	}
+
+	blockStateRoot := blockToBeValidated.Header().Root.String()
+
+	dbStateRoot := stateDB.IntermediateRoot(true).String()
+	if blockStateRoot != dbStateRoot {
+		return fmt.Errorf("state roots do not match at block %d", blockNumber)
+	}
+
+	return nil
+}
+
+func EthAPI(ctx context.Context, db *sqlx.DB, chainCfg *params.ChainConfig) (*ipldEth.PublicEthAPI, error) {
 	// TODO: decide network for custom chainConfig.
 	backend, err := NewEthBackend(db, &ipldEth.Config{
 		ChainConfig: chainCfg,
@@ -145,6 +156,16 @@ func ethAPI(ctx context.Context, db *sqlx.DB, chainCfg *params.ChainConfig) (*ip
 	}
 
 	return ipldEth.NewPublicEthAPI(backend, nil, false, false, false)
+}
+
+// fetchHeadBlockNumber gets the latest block number from the db
+func fetchHeadBlockNumber(ctx context.Context, api *ipldEth.PublicEthAPI) (uint64, error) {
+	headBlock, err := api.B.BlockByNumber(ctx, rpc.LatestBlockNumber)
+	if err != nil {
+		return 0, err
+	}
+
+	return headBlock.NumberU64(), nil
 }
 
 // applyTransaction attempts to apply a transaction to the given state database
