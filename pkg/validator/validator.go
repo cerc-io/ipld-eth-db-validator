@@ -28,6 +28,8 @@ import (
 var (
 	big8  = big.NewInt(8)
 	big32 = big.NewInt(32)
+
+	referentialIntegrityErr = "referential integrity check failed at block %d"
 )
 
 type service struct {
@@ -129,6 +131,15 @@ func (s *service) Validate(ctx context.Context, api *ipldEth.PublicEthAPI, idxBl
 		}
 
 		s.logger.Infof("state root verified for block %d", idxBlockNum)
+
+		err = ValidateReferentialIntegrity(s.db, idxBlockNum)
+		if err != nil {
+			s.logger.Errorf("failed to verify referential integrity at block %d", idxBlockNum)
+			return idxBlockNum, err
+		}
+
+		s.logger.Infof("referential integrity verified for block %d", idxBlockNum)
+
 		idxBlockNum++
 	} else {
 		// Sleep / wait for head to move ahead
@@ -185,6 +196,130 @@ func EthAPI(ctx context.Context, db *sqlx.DB, chainCfg *params.ChainConfig) (*ip
 	}
 
 	return ipldEth.NewPublicEthAPI(backend, nil, false, false, false)
+}
+
+// ValidateReferentialIntegrity validates referential integrity at the given height
+func ValidateReferentialIntegrity(db *sqlx.DB, blockNumber uint64) error {
+	// eth.header_cids
+	err := checkBlocksEntries(db, blockNumber, "eth.header_cids", "mh_key")
+	if err != nil {
+		return err
+	}
+
+	// eth.uncle_cids
+	var count int
+	err = db.Get(&count, UncleCIDsRefHeaderCIDs, blockNumber)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return fmt.Errorf(referentialIntegrityErr, blockNumber)
+	}
+
+	err = checkBlocksEntries(db, blockNumber, "eth.uncle_cids", "mh_key")
+	if err != nil {
+		return err
+	}
+
+	// eth.transaction_cids
+	err = db.Get(&count, TransactionCIDsRefHeaderCIDs, blockNumber)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return fmt.Errorf(referentialIntegrityErr, blockNumber)
+	}
+
+	err = checkBlocksEntries(db, blockNumber, "eth.transaction_cids", "mh_key")
+	if err != nil {
+		return err
+	}
+
+	// eth.receipt_cids
+	err = db.Get(&count, ReceiptCIDsRefTransactionCIDs, blockNumber)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return fmt.Errorf(referentialIntegrityErr, blockNumber)
+	}
+
+	err = checkBlocksEntries(db, blockNumber, "eth.receipt_cids", "leaf_mh_key")
+	if err != nil {
+		return err
+	}
+
+	// eth.state_cids
+	err = db.Get(&count, StateCIDsRefHeaderCIDs, blockNumber)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return fmt.Errorf(referentialIntegrityErr, blockNumber)
+	}
+
+	err = checkBlocksEntries(db, blockNumber, "eth.state_cids", "mh_key")
+	if err != nil {
+		return err
+	}
+
+	// eth.storage_cids
+	err = db.Get(&count, StorageCIDsRefStateCIDs, blockNumber)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return fmt.Errorf(referentialIntegrityErr, blockNumber)
+	}
+
+	// eth.state_accounts
+	err = db.Get(&count, StateAccountsRefStateCIDs, blockNumber)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return fmt.Errorf(referentialIntegrityErr, blockNumber)
+	}
+
+	// eth.access_list_elements
+	err = db.Get(&count, AccessListElementsRefTransactionCIDs, blockNumber)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return fmt.Errorf(referentialIntegrityErr, blockNumber)
+	}
+
+	// eth.log_cids
+	err = db.Get(&count, LogCIDsRefReceiptCIDs, blockNumber)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return fmt.Errorf(referentialIntegrityErr, blockNumber)
+	}
+
+	err = checkBlocksEntries(db, blockNumber, "eth.log_cids", "leaf_mh_key")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// checkBlocksEntries does a reference integrity check between the given CID table and IPLD blocks table on MHKey and block number
+func checkBlocksEntries(db *sqlx.DB, blockNumber uint64, CIDTable string, mhKeyField string) error {
+	var count int
+	err := db.Get(&count, fmt.Sprintf(CIDsRefIPLDBlocks, CIDTable, mhKeyField), blockNumber)
+	if err != nil {
+		return err
+	}
+
+	if count != 0 {
+		return fmt.Errorf(referentialIntegrityErr, blockNumber)
+	}
+
+	return nil
 }
 
 // fetchHeadBlockNumber gets the latest block number from the db
