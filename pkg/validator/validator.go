@@ -20,6 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
+
 	ipfsethdb "github.com/vulcanize/ipfs-ethdb/v4/postgres"
 	ipldEth "github.com/vulcanize/ipld-eth-server/v4/pkg/eth"
 	ethServerShared "github.com/vulcanize/ipld-eth-server/v4/pkg/shared"
@@ -29,7 +30,8 @@ var (
 	big8  = big.NewInt(8)
 	big32 = big.NewInt(32)
 
-	referentialIntegrityErr = "referential integrity check failed at block %d"
+	ReferentialIntegrityErr = "referential integrity check failed at block %d, entry for %s not found"
+	EntryNotFoundErr        = "entry for %s not found"
 )
 
 type service struct {
@@ -196,130 +198,6 @@ func EthAPI(ctx context.Context, db *sqlx.DB, chainCfg *params.ChainConfig) (*ip
 	}
 
 	return ipldEth.NewPublicEthAPI(backend, nil, false, false, false)
-}
-
-// ValidateReferentialIntegrity validates referential integrity at the given height
-func ValidateReferentialIntegrity(db *sqlx.DB, blockNumber uint64) error {
-	// eth.header_cids
-	err := checkBlocksEntries(db, blockNumber, "eth.header_cids", "mh_key")
-	if err != nil {
-		return err
-	}
-
-	// eth.uncle_cids
-	var count int
-	err = db.Get(&count, UncleCIDsRefHeaderCIDs, blockNumber)
-	if err != nil {
-		return err
-	}
-	if count > 0 {
-		return fmt.Errorf(referentialIntegrityErr, blockNumber)
-	}
-
-	err = checkBlocksEntries(db, blockNumber, "eth.uncle_cids", "mh_key")
-	if err != nil {
-		return err
-	}
-
-	// eth.transaction_cids
-	err = db.Get(&count, TransactionCIDsRefHeaderCIDs, blockNumber)
-	if err != nil {
-		return err
-	}
-	if count > 0 {
-		return fmt.Errorf(referentialIntegrityErr, blockNumber)
-	}
-
-	err = checkBlocksEntries(db, blockNumber, "eth.transaction_cids", "mh_key")
-	if err != nil {
-		return err
-	}
-
-	// eth.receipt_cids
-	err = db.Get(&count, ReceiptCIDsRefTransactionCIDs, blockNumber)
-	if err != nil {
-		return err
-	}
-	if count > 0 {
-		return fmt.Errorf(referentialIntegrityErr, blockNumber)
-	}
-
-	err = checkBlocksEntries(db, blockNumber, "eth.receipt_cids", "leaf_mh_key")
-	if err != nil {
-		return err
-	}
-
-	// eth.state_cids
-	err = db.Get(&count, StateCIDsRefHeaderCIDs, blockNumber)
-	if err != nil {
-		return err
-	}
-	if count > 0 {
-		return fmt.Errorf(referentialIntegrityErr, blockNumber)
-	}
-
-	err = checkBlocksEntries(db, blockNumber, "eth.state_cids", "mh_key")
-	if err != nil {
-		return err
-	}
-
-	// eth.storage_cids
-	err = db.Get(&count, StorageCIDsRefStateCIDs, blockNumber)
-	if err != nil {
-		return err
-	}
-	if count > 0 {
-		return fmt.Errorf(referentialIntegrityErr, blockNumber)
-	}
-
-	// eth.state_accounts
-	err = db.Get(&count, StateAccountsRefStateCIDs, blockNumber)
-	if err != nil {
-		return err
-	}
-	if count > 0 {
-		return fmt.Errorf(referentialIntegrityErr, blockNumber)
-	}
-
-	// eth.access_list_elements
-	err = db.Get(&count, AccessListElementsRefTransactionCIDs, blockNumber)
-	if err != nil {
-		return err
-	}
-	if count > 0 {
-		return fmt.Errorf(referentialIntegrityErr, blockNumber)
-	}
-
-	// eth.log_cids
-	err = db.Get(&count, LogCIDsRefReceiptCIDs, blockNumber)
-	if err != nil {
-		return err
-	}
-	if count > 0 {
-		return fmt.Errorf(referentialIntegrityErr, blockNumber)
-	}
-
-	err = checkBlocksEntries(db, blockNumber, "eth.log_cids", "leaf_mh_key")
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// checkBlocksEntries does a reference integrity check between the given CID table and IPLD blocks table on MHKey and block number
-func checkBlocksEntries(db *sqlx.DB, blockNumber uint64, CIDTable string, mhKeyField string) error {
-	var count int
-	err := db.Get(&count, fmt.Sprintf(CIDsRefIPLDBlocks, CIDTable, mhKeyField), blockNumber)
-	if err != nil {
-		return err
-	}
-
-	if count != 0 {
-		return fmt.Errorf(referentialIntegrityErr, blockNumber)
-	}
-
-	return nil
 }
 
 // fetchHeadBlockNumber gets the latest block number from the db
