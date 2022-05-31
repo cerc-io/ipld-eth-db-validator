@@ -3,22 +3,18 @@ BASE = $(GOPATH)/src/$(PACKAGE)
 PKGS = go list ./... | grep -v "^vendor/"
 
 # Tools
-## Testing library
-GINKGO = $(BIN)/ginkgo
-$(BIN)/ginkgo:
-	go install github.com/onsi/ginkgo/ginkgo
 
 .PHONY: integrationtest
-integrationtest: | $(GINKGO) $(GOOSE)
+integrationtest: | $(GOOSE)
 	go vet ./...
 	go fmt ./...
-	$(GINKGO) -r test/ -v
+	go run github.com/onsi/ginkgo/ginkgo -r test/ -v
 
 .PHONY: test
-test: | $(GINKGO) $(GOOSE)
+test: | $(GOOSE)
 	go vet ./...
 	go fmt ./...
-	$(GINKGO) -r validator_test/ -v
+	go run github.com/onsi/ginkgo/ginkgo -r validator_test/ -v
 
 build:
 	go fmt ./...
