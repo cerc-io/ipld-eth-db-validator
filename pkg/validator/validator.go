@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -32,17 +33,21 @@ var (
 type service struct {
 	db              *sqlx.DB
 	blockNum, trail uint64
+	sleepInterval   uint
 	logger          *log.Logger
 	chainCfg        *params.ChainConfig
+	quitChan        chan bool
 }
 
-func NewService(db *sqlx.DB, blockNum, trailNum uint64, chainCfg *params.ChainConfig) *service {
+func NewService(db *sqlx.DB, blockNum, trailNum uint64, sleepInterval uint, chainCfg *params.ChainConfig) *service {
 	return &service{
-		db:       db,
-		blockNum: blockNum,
-		trail:    trailNum,
-		logger:   log.New(),
-		chainCfg: chainCfg,
+		db:            db,
+		blockNum:      blockNum,
+		trail:         trailNum,
+		sleepInterval: sleepInterval,
+		logger:        log.New(),
+		chainCfg:      chainCfg,
+		quitChan:      make(chan bool),
 	}
 }
 
@@ -76,51 +81,86 @@ func NewEthBackend(db *sqlx.DB, c *ipldEth.Config) (*ipldEth.Backend, error) {
 }
 
 // Start is used to begin the service
-func (s *service) Start(ctx context.Context) (uint64, error) {
-	api, err := ethAPI(ctx, s.db, s.chainCfg)
+func (s *service) Start(ctx context.Context, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	api, err := EthAPI(ctx, s.db, s.chainCfg)
 	if err != nil {
-		return 0, err
+		s.logger.Fatal(err)
+		return
 	}
 
 	idxBlockNum := s.blockNum
-	headBlock, _ := api.B.BlockByNumber(ctx, rpc.LatestBlockNumber)
-	headBlockNum := headBlock.NumberU64()
 
-	for headBlockNum-s.trail >= idxBlockNum {
-		validateBlock, err := api.B.BlockByNumber(ctx, rpc.BlockNumber(idxBlockNum))
-		if err != nil {
-			return idxBlockNum, err
+	for {
+		select {
+		case <-s.quitChan:
+			s.logger.Infof("last validated block %v", idxBlockNum-1)
+			s.logger.Info("stopping ipld-eth-db-validator process")
+			return
+		default:
+			idxBlockNum, err = s.Validate(ctx, api, idxBlockNum)
+			if err != nil {
+				s.logger.Infof("last validated block %v", idxBlockNum-1)
+				s.logger.Fatal(err)
+				return
+			}
 		}
+	}
+}
 
-		stateDB, err := applyTransaction(validateBlock, api.B)
+// Stop is used to gracefully stop the service
+func (s *service) Stop() {
+	close(s.quitChan)
+}
+
+func (s *service) Validate(ctx context.Context, api *ipldEth.PublicEthAPI, idxBlockNum uint64) (uint64, error) {
+	headBlockNum, err := fetchHeadBlockNumber(ctx, api)
+	if err != nil {
+		return idxBlockNum, err
+	}
+
+	// Check if it block at height idxBlockNum can be validated
+	if idxBlockNum <= headBlockNum-s.trail {
+		err = ValidateBlock(ctx, api, idxBlockNum)
 		if err != nil {
-			return idxBlockNum, err
-		}
-
-		blockStateRoot := validateBlock.Header().Root.String()
-
-		dbStateRoot := stateDB.IntermediateRoot(true).String()
-		if blockStateRoot != dbStateRoot {
 			s.logger.Errorf("failed to verify state root at block %d", idxBlockNum)
-			return idxBlockNum, fmt.Errorf("failed to verify state root at block")
+			return idxBlockNum, err
 		}
 
 		s.logger.Infof("state root verified for block %d", idxBlockNum)
-
-		headBlock, err = api.B.BlockByNumber(ctx, rpc.LatestBlockNumber)
-		if err != nil {
-			return idxBlockNum, err
-		}
-
-		headBlockNum = headBlock.NumberU64()
 		idxBlockNum++
+	} else {
+		// Sleep / wait for head to move ahead
+		time.Sleep(time.Second * time.Duration(s.sleepInterval))
 	}
 
-	s.logger.Infof("last validated block %v", idxBlockNum-1)
 	return idxBlockNum, nil
 }
 
-func ethAPI(ctx context.Context, db *sqlx.DB, chainCfg *params.ChainConfig) (*ipldEth.PublicEthAPI, error) {
+// ValidateBlock validates block at the given height
+func ValidateBlock(ctx context.Context, api *ipldEth.PublicEthAPI, blockNumber uint64) error {
+	blockToBeValidated, err := api.B.BlockByNumber(ctx, rpc.BlockNumber(blockNumber))
+	if err != nil {
+		return err
+	}
+
+	stateDB, err := applyTransaction(blockToBeValidated, api.B)
+	if err != nil {
+		return err
+	}
+
+	blockStateRoot := blockToBeValidated.Header().Root.String()
+
+	dbStateRoot := stateDB.IntermediateRoot(true).String()
+	if blockStateRoot != dbStateRoot {
+		return fmt.Errorf("state roots do not match at block %d", blockNumber)
+	}
+
+	return nil
+}
+
+func EthAPI(ctx context.Context, db *sqlx.DB, chainCfg *params.ChainConfig) (*ipldEth.PublicEthAPI, error) {
 	// TODO: decide network for custom chainConfig.
 	backend, err := NewEthBackend(db, &ipldEth.Config{
 		ChainConfig: chainCfg,
@@ -145,6 +185,16 @@ func ethAPI(ctx context.Context, db *sqlx.DB, chainCfg *params.ChainConfig) (*ip
 	}
 
 	return ipldEth.NewPublicEthAPI(backend, nil, false, false, false)
+}
+
+// fetchHeadBlockNumber gets the latest block number from the db
+func fetchHeadBlockNumber(ctx context.Context, api *ipldEth.PublicEthAPI) (uint64, error) {
+	headBlock, err := api.B.BlockByNumber(ctx, rpc.LatestBlockNumber)
+	if err != nil {
+		return 0, err
+	}
+
+	return headBlock.NumberU64(), nil
 }
 
 // applyTransaction attempts to apply a transaction to the given state database
