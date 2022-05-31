@@ -114,10 +114,13 @@ var _ = Describe("eth state reading tests", func() {
 
 	Describe("state_validation", func() {
 		It("Validator", func() {
-			srvc := validator.NewService(db, blockHeight, trail, validator.TestChainConfig)
-
-			_, err := srvc.Start(context.Background())
+			api, err := validator.EthAPI(context.Background(), db, validator.TestChainConfig)
 			Expect(err).ToNot(HaveOccurred())
+
+			for i := uint64(blockHeight); i <= chainLength-trail; i++ {
+				err = validator.ValidateBlock(context.Background(), api, i)
+				Expect(err).ToNot(HaveOccurred())
+			}
 		})
 	})
 })
