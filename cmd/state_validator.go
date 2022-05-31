@@ -64,8 +64,8 @@ func init() {
 	rootCmd.AddCommand(stateValidatorCmd)
 
 	stateValidatorCmd.PersistentFlags().String("block-height", "1", "block height to initiate state validation")
-	stateValidatorCmd.PersistentFlags().String("trail", "0", "trail of block height to validate")
-	stateValidatorCmd.PersistentFlags().String("sleep-interval", "5", "sleep interval in seconds after validator has caught up to head")
+	stateValidatorCmd.PersistentFlags().String("trail", "16", "trail of block height to validate")
+	stateValidatorCmd.PersistentFlags().String("sleep-interval", "10", "sleep interval in seconds after validator has caught up to (head-trail) height")
 
 	stateValidatorCmd.PersistentFlags().String("chain-config", "", "path to chain config")
 

@@ -96,7 +96,7 @@ func (s *service) Start(ctx context.Context, wg *sync.WaitGroup) {
 		select {
 		case <-s.quitChan:
 			s.logger.Infof("last validated block %v", idxBlockNum-1)
-			s.logger.Info("stopping ipld eth-db validator process")
+			s.logger.Info("stopping ipld-eth-db-validator process")
 			return
 		default:
 			idxBlockNum, err = s.Validate(ctx, api, idxBlockNum)
