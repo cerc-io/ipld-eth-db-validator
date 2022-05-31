@@ -40,8 +40,7 @@ var _ = Describe("Integration test", func() {
 
 			db := shared.SetupDB()
 			srvc := validator.NewService(db, uint64(contract.BlockNumber), trail, validatorSleepInterval, validator.IntegrationTestChainConfig)
-			_, err := srvc.Start(ctx)
-			Expect(err).ToNot(HaveOccurred())
+			srvc.Start(ctx, nil)
 		})
 	})
 })

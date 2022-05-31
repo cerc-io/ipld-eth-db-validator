@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -35,6 +36,7 @@ type service struct {
 	sleepInterval   uint
 	logger          *log.Logger
 	chainCfg        *params.ChainConfig
+	quitChan        chan bool
 }
 
 func NewService(db *sqlx.DB, blockNum, trailNum uint64, sleepInterval uint, chainCfg *params.ChainConfig) *service {
@@ -45,6 +47,7 @@ func NewService(db *sqlx.DB, blockNum, trailNum uint64, sleepInterval uint, chai
 		sleepInterval: sleepInterval,
 		logger:        log.New(),
 		chainCfg:      chainCfg,
+		quitChan:      make(chan bool),
 	}
 }
 
@@ -78,37 +81,61 @@ func NewEthBackend(db *sqlx.DB, c *ipldEth.Config) (*ipldEth.Backend, error) {
 }
 
 // Start is used to begin the service
-func (s *service) Start(ctx context.Context) (uint64, error) {
+func (s *service) Start(ctx context.Context, wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	api, err := EthAPI(ctx, s.db, s.chainCfg)
 	if err != nil {
-		return 0, err
+		s.logger.Fatal(err)
+		return
 	}
 
 	idxBlockNum := s.blockNum
 
 	for {
-		headBlockNum, err := fetchHeadBlockNumber(ctx, api)
+		select {
+		case <-s.quitChan:
+			s.logger.Infof("last validated block %v", idxBlockNum-1)
+			s.logger.Info("stopping ipld eth-db validator process")
+			return
+		default:
+			idxBlockNum, err = s.Validate(ctx, api, idxBlockNum)
+			if err != nil {
+				s.logger.Infof("last validated block %v", idxBlockNum-1)
+				s.logger.Fatal(err)
+				return
+			}
+		}
+	}
+}
+
+// Stop is used to gracefully stop the service
+func (s *service) Stop() {
+	close(s.quitChan)
+}
+
+func (s *service) Validate(ctx context.Context, api *ipldEth.PublicEthAPI, idxBlockNum uint64) (uint64, error) {
+	headBlockNum, err := fetchHeadBlockNumber(ctx, api)
+	if err != nil {
+		return idxBlockNum, err
+	}
+
+	// Check if it block at height idxBlockNum can be validated
+	if idxBlockNum <= headBlockNum-s.trail {
+		err = ValidateBlock(ctx, api, idxBlockNum)
 		if err != nil {
+			s.logger.Errorf("failed to verify state root at block %d", idxBlockNum)
 			return idxBlockNum, err
 		}
 
-		// Check if it block at height idxBlockNum can be validated
-		if idxBlockNum <= headBlockNum-s.trail {
-			err = ValidateBlock(ctx, api, idxBlockNum)
-			if err != nil {
-				s.logger.Errorf("failed to verify state root at block %d", idxBlockNum)
-				return idxBlockNum, err
-			}
-
-			s.logger.Infof("state root verified for block %d", idxBlockNum)
-			idxBlockNum++
-		} else {
-			// Sleep / wait for head to move ahead
-			time.Sleep(time.Second * time.Duration(s.sleepInterval))
-		}
+		s.logger.Infof("state root verified for block %d", idxBlockNum)
+		idxBlockNum++
+	} else {
+		// Sleep / wait for head to move ahead
+		time.Sleep(time.Second * time.Duration(s.sleepInterval))
 	}
 
-	// s.logger.Infof("last validated block %v", idxBlockNum-1)
+	return idxBlockNum, nil
 }
 
 // ValidateBlock validates block at the given height

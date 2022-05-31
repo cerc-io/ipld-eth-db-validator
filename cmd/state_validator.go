@@ -3,6 +3,9 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/statediff"
 	log "github.com/sirupsen/logrus"
@@ -44,14 +47,17 @@ func stateValidator() {
 		logWithCommand.Fatal(err)
 	}
 
-	srvc := validator.NewService(cfg.DB, height, trail, sleepInterval, chainCfg)
+	service := validator.NewService(cfg.DB, height, trail, sleepInterval, chainCfg)
 
-	_, err = srvc.Start(context.Background())
-	if err != nil {
-		logWithCommand.Fatal(err)
-	}
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+	go service.Start(context.Background(), wg)
 
-	logWithCommand.Println("state validation complete")
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, os.Interrupt)
+	<-shutdown
+	service.Stop()
+	wg.Wait()
 }
 
 func init() {
