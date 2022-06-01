@@ -47,7 +47,7 @@ func stateValidator() {
 		logWithCommand.Fatal(err)
 	}
 
-	service := validator.NewService(cfg.DB, height, trail, sleepInterval, chainCfg)
+	service := validator.NewService(cfg.DB, height, trail, sleepInterval, chainCfg, nil)
 
 	wg := new(sync.WaitGroup)
 	wg.Add(1)

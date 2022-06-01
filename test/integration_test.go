@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -25,6 +26,24 @@ var _ = Describe("Integration test", func() {
 	var contractErr error
 	sleepInterval := 5 * time.Second
 
+	db := shared.SetupDB()
+	validationProgressChan := make(chan uint64)
+	service := validator.NewService(db, 1, trail, validatorSleepInterval, validator.IntegrationTestChainConfig, validationProgressChan)
+
+	wg := new(sync.WaitGroup)
+
+	It("test init", func() {
+		wg.Add(1)
+		go service.Start(ctx, wg)
+	})
+
+	defer It("test teardown", func() {
+		service.Stop()
+		wg.Wait()
+
+		Expect(validationProgressChan).To(BeClosed())
+	})
+
 	Describe("Validate state", func() {
 		BeforeEach(func() {
 			// Deploy a dummy contract as the first contract might get deployed at block number 0
@@ -35,20 +54,11 @@ var _ = Describe("Integration test", func() {
 			time.Sleep(sleepInterval)
 		})
 
-		It("Validate state root", func() {
+		It("performs state root validation", func() {
 			Expect(contractErr).ToNot(HaveOccurred())
 
-			db := shared.SetupDB()
-			srvc := validator.NewService(db, uint64(contract.BlockNumber), trail, validatorSleepInterval, validator.IntegrationTestChainConfig)
-			stopCh := make(chan int, 1)
-			go func() {
-				srvc.Start(ctx, nil)
-				stopCh <- 1
-			}()
-			go func() {
-				<-stopCh
-				srvc.Stop()
-			}()
+			Expect(validationProgressChan).ToNot(BeClosed())
+			Eventually(validationProgressChan).Should(Receive(Equal(uint64(contract.BlockNumber))))
 		})
 	})
 })

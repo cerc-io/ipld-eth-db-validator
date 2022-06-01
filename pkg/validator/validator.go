@@ -37,9 +37,10 @@ type service struct {
 	logger          *log.Logger
 	chainCfg        *params.ChainConfig
 	quitChan        chan bool
+	progressChan    chan uint64
 }
 
-func NewService(db *sqlx.DB, blockNum, trailNum uint64, sleepInterval uint, chainCfg *params.ChainConfig) *service {
+func NewService(db *sqlx.DB, blockNum, trailNum uint64, sleepInterval uint, chainCfg *params.ChainConfig, progressChan chan uint64) *service {
 	return &service{
 		db:            db,
 		blockNum:      blockNum,
@@ -48,6 +49,7 @@ func NewService(db *sqlx.DB, blockNum, trailNum uint64, sleepInterval uint, chai
 		logger:        log.New(),
 		chainCfg:      chainCfg,
 		quitChan:      make(chan bool),
+		progressChan:  progressChan,
 	}
 }
 
@@ -96,7 +98,6 @@ func (s *service) Start(ctx context.Context, wg *sync.WaitGroup) {
 		select {
 		case <-s.quitChan:
 			s.logger.Infof("last validated block %v", idxBlockNum-1)
-			s.logger.Info("stopping ipld-eth-db-validator process")
 			return
 		default:
 			idxBlockNum, err = s.Validate(ctx, api, idxBlockNum)
@@ -111,6 +112,10 @@ func (s *service) Start(ctx context.Context, wg *sync.WaitGroup) {
 
 // Stop is used to gracefully stop the service
 func (s *service) Stop() {
+	s.logger.Info("stopping ipld-eth-db-validator process")
+	if s.progressChan != nil {
+		close(s.progressChan)
+	}
 	close(s.quitChan)
 }
 
@@ -129,6 +134,10 @@ func (s *service) Validate(ctx context.Context, api *ipldEth.PublicEthAPI, idxBl
 		}
 
 		s.logger.Infof("state root verified for block %d", idxBlockNum)
+		if s.progressChan != nil {
+			s.progressChan <- idxBlockNum
+		}
+
 		idxBlockNum++
 	} else {
 		// Sleep / wait for head to move ahead
