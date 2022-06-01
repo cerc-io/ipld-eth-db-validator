@@ -98,6 +98,9 @@ func (s *service) Start(ctx context.Context, wg *sync.WaitGroup) {
 		select {
 		case <-s.quitChan:
 			s.logger.Infof("last validated block %v", idxBlockNum-1)
+			if s.progressChan != nil {
+				close(s.progressChan)
+			}
 			return
 		default:
 			idxBlockNum, err = s.Validate(ctx, api, idxBlockNum)
@@ -113,9 +116,6 @@ func (s *service) Start(ctx context.Context, wg *sync.WaitGroup) {
 // Stop is used to gracefully stop the service
 func (s *service) Stop() {
 	s.logger.Info("stopping ipld-eth-db-validator process")
-	if s.progressChan != nil {
-		close(s.progressChan)
-	}
 	close(s.quitChan)
 }
 

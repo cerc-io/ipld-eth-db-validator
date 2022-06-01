@@ -9,9 +9,10 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/ipld-eth-db-validator/pkg/validator"
+	integration "github.com/vulcanize/ipld-eth-db-validator/test"
 
 	"github.com/vulcanize/ipld-eth-server/v3/pkg/shared"
-	integration "github.com/vulcanize/ipld-eth-server/v3/test"
+	ethServerIntegration "github.com/vulcanize/ipld-eth-server/v3/test"
 )
 
 const (
@@ -19,12 +20,28 @@ const (
 	validatorSleepInterval = uint(5)
 )
 
+var (
+	testAddresses = []string{
+		"0x1111111111111111111111111111111111111112",
+		"0x1ca7c995f8eF0A2989BbcE08D5B7Efe50A584aa1",
+		"0x9a4b666af23a2cdb4e5538e1d222a445aeb82134",
+		"0xF7C7AEaECD2349b129d5d15790241c32eeE4607B",
+		"0x992b6E9BFCA1F7b0797Cee10b0170E536EAd3532",
+		"0x29ed93a7454Bc17a8D4A24D0627009eE0849B990",
+		"0x66E3dCA826b04B5d4988F7a37c91c9b1041e579D",
+		"0x96288939Ac7048c27E0E087b02bDaad3cd61b37b",
+		"0xD354280BCd771541c935b15bc04342c26086FE9B",
+		"0x7f887e25688c274E77b8DeB3286A55129B55AF14",
+	}
+)
+
 var _ = Describe("Integration test", func() {
 	ctx := context.Background()
 
-	var contract *integration.ContractDeployed
-	var contractErr error
-	sleepInterval := 5 * time.Second
+	var contract *ethServerIntegration.ContractDeployed
+	var err error
+	sleepInterval := 2 * time.Second
+	timeout := 4 * time.Second
 
 	db := shared.SetupDB()
 	validationProgressChan := make(chan uint64)
@@ -35,6 +52,10 @@ var _ = Describe("Integration test", func() {
 	It("test init", func() {
 		wg.Add(1)
 		go service.Start(ctx, wg)
+
+		// Deploy a dummy contract as the first contract might get deployed at block number 0
+		_, _ = ethServerIntegration.DeployContract()
+		time.Sleep(sleepInterval)
 	})
 
 	defer It("test teardown", func() {
@@ -45,20 +66,35 @@ var _ = Describe("Integration test", func() {
 	})
 
 	Describe("Validate state", func() {
-		BeforeEach(func() {
-			// Deploy a dummy contract as the first contract might get deployed at block number 0
-			_, _ = integration.DeployContract()
+		It("performs validation on contract deployment", func() {
+			contract, err = integration.DeployTestContract()
+			Expect(err).ToNot(HaveOccurred())
 			time.Sleep(sleepInterval)
-
-			contract, contractErr = integration.DeployContract()
-			time.Sleep(sleepInterval)
-		})
-
-		It("performs state root validation", func() {
-			Expect(contractErr).ToNot(HaveOccurred())
 
 			Expect(validationProgressChan).ToNot(BeClosed())
-			Eventually(validationProgressChan).Should(Receive(Equal(uint64(contract.BlockNumber))))
+			Eventually(validationProgressChan, timeout).Should(Receive(Equal(uint64(contract.BlockNumber))))
+		})
+
+		It("performs validation on contract transactions", func() {
+			for i := 0; i < 10; i++ {
+				res, txErr := integration.PutTestValue(contract.Address, i, i)
+				Expect(txErr).ToNot(HaveOccurred())
+				time.Sleep(sleepInterval)
+
+				Expect(validationProgressChan).ToNot(BeClosed())
+				Eventually(validationProgressChan, timeout).Should(Receive(Equal(uint64(res.BlockNumber))))
+			}
+		})
+
+		It("performs validation on eth transfer transactions", func() {
+			for _, address := range testAddresses {
+				tx, txErr := ethServerIntegration.SendEth(address, "0.01")
+				Expect(txErr).ToNot(HaveOccurred())
+				time.Sleep(sleepInterval)
+
+				Expect(validationProgressChan).ToNot(BeClosed())
+				Eventually(validationProgressChan, timeout).Should(Receive(Equal(uint64(tx.BlockNumber))))
+			}
 		})
 	})
 })
