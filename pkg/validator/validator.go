@@ -20,6 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
+
 	ipfsethdb "github.com/vulcanize/ipfs-ethdb/v4/postgres"
 	ipldEth "github.com/vulcanize/ipld-eth-server/v4/pkg/eth"
 	ethServerShared "github.com/vulcanize/ipld-eth-server/v4/pkg/shared"
@@ -28,6 +29,9 @@ import (
 var (
 	big8  = big.NewInt(8)
 	big32 = big.NewInt(32)
+
+	ReferentialIntegrityErr = "referential integrity check failed at block %d, entry for %s not found"
+	EntryNotFoundErr        = "entry for %s not found"
 )
 
 type service struct {
@@ -129,6 +133,15 @@ func (s *service) Validate(ctx context.Context, api *ipldEth.PublicEthAPI, idxBl
 		}
 
 		s.logger.Infof("state root verified for block %d", idxBlockNum)
+
+		err = ValidateReferentialIntegrity(s.db, idxBlockNum)
+		if err != nil {
+			s.logger.Errorf("failed to verify referential integrity at block %d", idxBlockNum)
+			return idxBlockNum, err
+		}
+
+		s.logger.Infof("referential integrity verified for block %d", idxBlockNum)
+
 		idxBlockNum++
 	} else {
 		// Sleep / wait for head to move ahead

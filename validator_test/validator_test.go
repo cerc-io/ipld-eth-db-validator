@@ -120,6 +120,9 @@ var _ = Describe("eth state reading tests", func() {
 			for i := uint64(blockHeight); i <= chainLength-trail; i++ {
 				err = validator.ValidateBlock(context.Background(), api, i)
 				Expect(err).ToNot(HaveOccurred())
+
+				err = validator.ValidateReferentialIntegrity(db, i)
+				Expect(err).ToNot(HaveOccurred())
 			}
 		})
 	})
