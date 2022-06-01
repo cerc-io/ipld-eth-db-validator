@@ -69,12 +69,12 @@ func ValidateHeaderCIDsRef(db *sqlx.DB, blockNumber uint64) error {
 
 // ValidateUncleCIDsRef does a reference integrity check on references in eth.uncle_cids table
 func ValidateUncleCIDsRef(db *sqlx.DB, blockNumber uint64) error {
-	var count int
-	err := db.Get(&count, UncleCIDsRefHeaderCIDs, blockNumber)
+	var exists bool
+	err := db.Get(&exists, UncleCIDsRefHeaderCIDs, blockNumber)
 	if err != nil {
 		return err
 	}
-	if count > 0 {
+	if exists {
 		return fmt.Errorf(ReferentialIntegrityErr, blockNumber, "eth.header_cids")
 	}
 
@@ -88,12 +88,12 @@ func ValidateUncleCIDsRef(db *sqlx.DB, blockNumber uint64) error {
 
 // ValidateTransactionCIDsRef does a reference integrity check on references in eth.header_cids table
 func ValidateTransactionCIDsRef(db *sqlx.DB, blockNumber uint64) error {
-	var count int
-	err := db.Get(&count, TransactionCIDsRefHeaderCIDs, blockNumber)
+	var exists bool
+	err := db.Get(&exists, TransactionCIDsRefHeaderCIDs, blockNumber)
 	if err != nil {
 		return err
 	}
-	if count > 0 {
+	if exists {
 		return fmt.Errorf(ReferentialIntegrityErr, blockNumber, "eth.header_cids")
 	}
 
@@ -107,12 +107,12 @@ func ValidateTransactionCIDsRef(db *sqlx.DB, blockNumber uint64) error {
 
 // ValidateReceiptCIDsRef does a reference integrity check on references in eth.receipt_cids table
 func ValidateReceiptCIDsRef(db *sqlx.DB, blockNumber uint64) error {
-	var count int
-	err := db.Get(&count, ReceiptCIDsRefTransactionCIDs, blockNumber)
+	var exists bool
+	err := db.Get(&exists, ReceiptCIDsRefTransactionCIDs, blockNumber)
 	if err != nil {
 		return err
 	}
-	if count > 0 {
+	if exists {
 		return fmt.Errorf(ReferentialIntegrityErr, blockNumber, "eth.transaction_cids")
 	}
 
@@ -126,12 +126,12 @@ func ValidateReceiptCIDsRef(db *sqlx.DB, blockNumber uint64) error {
 
 // ValidateStateCIDsRef does a reference integrity check on references in eth.state_cids table
 func ValidateStateCIDsRef(db *sqlx.DB, blockNumber uint64) error {
-	var count int
-	err := db.Get(&count, StateCIDsRefHeaderCIDs, blockNumber)
+	var exists bool
+	err := db.Get(&exists, StateCIDsRefHeaderCIDs, blockNumber)
 	if err != nil {
 		return err
 	}
-	if count > 0 {
+	if exists {
 		return fmt.Errorf(ReferentialIntegrityErr, blockNumber, "eth.header_cids")
 	}
 
@@ -145,12 +145,12 @@ func ValidateStateCIDsRef(db *sqlx.DB, blockNumber uint64) error {
 
 // ValidateStorageCIDsRef does a reference integrity check on references in eth.storage_cids table
 func ValidateStorageCIDsRef(db *sqlx.DB, blockNumber uint64) error {
-	var count int
-	err := db.Get(&count, StorageCIDsRefStateCIDs, blockNumber)
+	var exists bool
+	err := db.Get(&exists, StorageCIDsRefStateCIDs, blockNumber)
 	if err != nil {
 		return err
 	}
-	if count > 0 {
+	if exists {
 		return fmt.Errorf(ReferentialIntegrityErr, blockNumber, "eth.state_cids")
 	}
 
@@ -164,12 +164,12 @@ func ValidateStorageCIDsRef(db *sqlx.DB, blockNumber uint64) error {
 
 // ValidateStateAccountsRef does a reference integrity check on references in eth.state_accounts table
 func ValidateStateAccountsRef(db *sqlx.DB, blockNumber uint64) error {
-	var count int
-	err := db.Get(&count, StateAccountsRefStateCIDs, blockNumber)
+	var exists bool
+	err := db.Get(&exists, StateAccountsRefStateCIDs, blockNumber)
 	if err != nil {
 		return err
 	}
-	if count > 0 {
+	if exists {
 		return fmt.Errorf(ReferentialIntegrityErr, blockNumber, "eth.state_cids")
 	}
 
@@ -178,12 +178,12 @@ func ValidateStateAccountsRef(db *sqlx.DB, blockNumber uint64) error {
 
 // ValidateAccessListElementsRef does a reference integrity check on references in eth.access_list_elements table
 func ValidateAccessListElementsRef(db *sqlx.DB, blockNumber uint64) error {
-	var count int
-	err := db.Get(&count, AccessListElementsRefTransactionCIDs, blockNumber)
+	var exists bool
+	err := db.Get(&exists, AccessListElementsRefTransactionCIDs, blockNumber)
 	if err != nil {
 		return err
 	}
-	if count > 0 {
+	if exists {
 		return fmt.Errorf(ReferentialIntegrityErr, blockNumber, "eth.transaction_cids")
 	}
 
@@ -192,12 +192,12 @@ func ValidateAccessListElementsRef(db *sqlx.DB, blockNumber uint64) error {
 
 // ValidateLogCIDsRef does a reference integrity check on references in eth.log_cids table
 func ValidateLogCIDsRef(db *sqlx.DB, blockNumber uint64) error {
-	var count int
-	err := db.Get(&count, LogCIDsRefReceiptCIDs, blockNumber)
+	var exists bool
+	err := db.Get(&exists, LogCIDsRefReceiptCIDs, blockNumber)
 	if err != nil {
 		return err
 	}
-	if count > 0 {
+	if exists {
 		return fmt.Errorf(ReferentialIntegrityErr, blockNumber, "eth.receipt_cids")
 	}
 
@@ -211,13 +211,12 @@ func ValidateLogCIDsRef(db *sqlx.DB, blockNumber uint64) error {
 
 // ValidateIPFSBlocks does a reference integrity check between the given CID table and IPFS blocks table on MHKey and block number
 func ValidateIPFSBlocks(db *sqlx.DB, blockNumber uint64, CIDTable string, mhKeyField string) error {
-	var count int
-	err := db.Get(&count, fmt.Sprintf(CIDsRefIPLDBlocks, CIDTable, mhKeyField), blockNumber)
+	var exists bool
+	err := db.Get(&exists, fmt.Sprintf(CIDsRefIPLDBlocks, CIDTable, mhKeyField), blockNumber)
 	if err != nil {
 		return err
 	}
-
-	if count != 0 {
+	if exists {
 		return fmt.Errorf(ReferentialIntegrityErr, blockNumber, "public.blocks")
 	}
 

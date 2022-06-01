@@ -1,7 +1,14 @@
 package validator
 
+// Queries to validate referential integrity in the indexed data:
+// At the given block number,
+// In each table, for each (would be) foreign key reference, perform left join with the referenced table on the foreign key fields.
+// Select rows where there are no matching rows in the referenced table.
+// If any such rows exist, there are missing entries in the referenced table.
+
 const (
-	CIDsRefIPLDBlocks = `SELECT COUNT(*)
+	CIDsRefIPLDBlocks = `SELECT EXISTS (
+						SELECT *
 						FROM %[1]s
 						LEFT JOIN public.blocks ON (
 							%[1]s.%[2]s = blocks.key
@@ -9,9 +16,11 @@ const (
 						)
 						WHERE
 							%[1]s.block_number = $1
-							AND blocks.key IS NULL`
+							AND blocks.key IS NULL
+					)`
 
-	UncleCIDsRefHeaderCIDs = `SELECT COUNT(*)
+	UncleCIDsRefHeaderCIDs = `SELECT EXISTS (
+						SELECT *
 						FROM eth.uncle_cids
 						LEFT JOIN eth.header_cids ON (
 							uncle_cids.header_id = header_cids.block_hash
@@ -19,9 +28,11 @@ const (
 						)
 						WHERE
 							uncle_cids.block_number = $1
-							AND header_cids.block_hash IS NULL`
+							AND header_cids.block_hash IS NULL
+					)`
 
-	TransactionCIDsRefHeaderCIDs = `SELECT COUNT(*)
+	TransactionCIDsRefHeaderCIDs = `SELECT EXISTS (
+						SELECT *
 						FROM eth.transaction_cids
 						LEFT JOIN eth.header_cids ON (
 							transaction_cids.header_id = header_cids.block_hash
@@ -29,9 +40,11 @@ const (
 						)
 						WHERE
 							transaction_cids.block_number = $1
-							AND header_cids.block_hash IS NULL`
+							AND header_cids.block_hash IS NULL
+					)`
 
-	ReceiptCIDsRefTransactionCIDs = `SELECT COUNT(*)
+	ReceiptCIDsRefTransactionCIDs = `SELECT EXISTS (
+						SELECT *
 						FROM eth.receipt_cids
 						LEFT JOIN eth.transaction_cids ON (
 							receipt_cids.tx_id = transaction_cids.tx_hash
@@ -39,9 +52,11 @@ const (
 						)
 						WHERE
 							receipt_cids.block_number = $1
-							AND transaction_cids.tx_hash IS NULL`
+							AND transaction_cids.tx_hash IS NULL
+					)`
 
-	StateCIDsRefHeaderCIDs = `SELECT COUNT(*)
+	StateCIDsRefHeaderCIDs = `SELECT EXISTS (
+						SELECT *
 						FROM eth.state_cids
 						LEFT JOIN eth.header_cids ON (
 							state_cids.header_id = header_cids.block_hash
@@ -49,9 +64,11 @@ const (
 						)
 						WHERE
 							state_cids.block_number = $1
-							AND header_cids.block_hash IS NULL`
+							AND header_cids.block_hash IS NULL
+					)`
 
-	StorageCIDsRefStateCIDs = `SELECT COUNT(*)
+	StorageCIDsRefStateCIDs = `SELECT EXISTS (
+						SELECT *
 						FROM eth.storage_cids
 						LEFT JOIN eth.state_cids ON (
 							storage_cids.state_path = state_cids.state_path
@@ -60,9 +77,11 @@ const (
 						)
 						WHERE
 							storage_cids.block_number = $1
-							AND state_cids.state_path IS NULL`
+							AND state_cids.state_path IS NULL
+					)`
 
-	StateAccountsRefStateCIDs = `SELECT COUNT(*)
+	StateAccountsRefStateCIDs = `SELECT EXISTS (
+						SELECT *
 						FROM eth.state_accounts
 						LEFT JOIN eth.state_cids ON (
 							state_accounts.state_path = state_cids.state_path
@@ -71,9 +90,11 @@ const (
 						)
 						WHERE
 							state_accounts.block_number = $1
-							AND state_cids.state_path IS NULL`
+							AND state_cids.state_path IS NULL
+					)`
 
-	AccessListElementsRefTransactionCIDs = `SELECT COUNT(*)
+	AccessListElementsRefTransactionCIDs = `SELECT EXISTS (
+						SELECT *
 						FROM eth.access_list_elements
 						LEFT JOIN eth.transaction_cids ON (
 							access_list_elements.tx_id = transaction_cids.tx_hash
@@ -81,9 +102,11 @@ const (
 						)
 						WHERE
 							access_list_elements.block_number = $1
-							AND transaction_cids.tx_hash IS NULL`
+							AND transaction_cids.tx_hash IS NULL
+					)`
 
-	LogCIDsRefReceiptCIDs = `SELECT COUNT(*)
+	LogCIDsRefReceiptCIDs = `SELECT EXISTS (
+						SELECT *
 						FROM eth.log_cids
 						LEFT JOIN eth.receipt_cids ON (
 							log_cids.rct_id = receipt_cids.tx_id
@@ -91,5 +114,6 @@ const (
 						)
 						WHERE
 							log_cids.block_number = $1
-							AND receipt_cids.tx_id IS NULL`
+							AND receipt_cids.tx_id IS NULL
+					)`
 )
