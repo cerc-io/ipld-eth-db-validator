@@ -11,7 +11,7 @@ require (
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.11.0
 	github.com/vulcanize/ipfs-ethdb/v3 v3.0.3
-	github.com/vulcanize/ipld-eth-server/v3 v3.2.0
+	github.com/vulcanize/ipld-eth-server/v3 v3.2.1
 )
 
 require (
@@ -234,7 +234,7 @@ require (
 	github.com/tklauser/go-sysconf v0.3.6 // indirect
 	github.com/tklauser/numcpus v0.2.2 // indirect
 	github.com/tyler-smith/go-bip39 v1.0.1-0.20181017060643-dbb3b84ba2ef // indirect
-	github.com/vulcanize/eth-ipfs-state-validator/v3 v3.0.0 // indirect
+	github.com/vulcanize/eth-ipfs-state-validator/v3 v3.0.2 // indirect
 	github.com/whyrusleeping/base32 v0.0.0-20170828182744-c30ac30633cc // indirect
 	github.com/whyrusleeping/cbor-gen v0.0.0-20210219115102-f37d292932f2 // indirect
 	github.com/whyrusleeping/chunker v0.0.0-20181014151217-fe64bd25879f // indirect
