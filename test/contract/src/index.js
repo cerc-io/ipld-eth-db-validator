@@ -63,6 +63,49 @@ fastify.get('/v1/sendEth', async (req, reply) => {
     }
 });
 
+fastify.get('/v1/deployTestContract', async (req, reply) => {
+    const testContract = await hre.ethers.getContractFactory("Test");
+    const test = await testContract.deploy();
+    await test.deployed();
+
+    return {
+        address: test.address,
+        txHash: test.deployTransaction.hash,
+        blockNumber: test.deployTransaction.blockNumber,
+        blockHash: test.deployTransaction.blockHash,
+    }
+});
+
+fastify.get('/v1/putTestValue', async (req, reply) => {
+    const addr = req.query.addr;
+    const index = req.query.index;
+    const value = req.query.value;
+
+    const testContract = await hre.ethers.getContractFactory("Test");
+    const test = await testContract.attach(addr);
+
+    const tx = await test.Put(index, value);
+    const receipt = await tx.wait();
+
+    return {
+        blockNumber: receipt.blockNumber,
+    }
+});
+
+fastify.get('/v1/destroyTestContract', async (req, reply) => {
+    const addr = req.query.addr;
+
+    const testContract = await hre.ethers.getContractFactory("Test");
+    const test = await testContract.attach(addr);
+
+    await test.destroy();
+    const blockNum = await hre.ethers.provider.getBlockNumber()
+
+    return {
+        blockNumber: blockNum,
+    }
+})
+
 async function main() {
     try {
         await fastify.listen(3000, '0.0.0.0');

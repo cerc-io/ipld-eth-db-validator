@@ -7,7 +7,6 @@ import (
 	"os/signal"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/statediff"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -34,20 +33,7 @@ func stateValidator() {
 		logWithCommand.Fatal(err)
 	}
 
-	height := viper.GetUint64("validate.block-height")
-	if height < 1 {
-		logWithCommand.Fatalf("block height cannot be less the 1")
-	}
-	trail := viper.GetUint64("validate.trail")
-	sleepInterval := viper.GetUint("validate.sleepInterval")
-
-	chainConfigPath := viper.GetString("ethereum.chainConfig")
-	chainCfg, err := statediff.LoadConfig(chainConfigPath)
-	if err != nil {
-		logWithCommand.Fatal(err)
-	}
-
-	service := validator.NewService(cfg.DB, height, trail, sleepInterval, chainCfg)
+	service := validator.NewService(cfg, nil)
 
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
