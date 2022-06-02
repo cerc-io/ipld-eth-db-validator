@@ -40,14 +40,14 @@ type service struct {
 	progressChan    chan uint64
 }
 
-func NewService(db *sqlx.DB, blockNum, trailNum uint64, sleepInterval uint, chainCfg *params.ChainConfig, progressChan chan uint64) *service {
+func NewService(cfg *Config, progressChan chan uint64) *service {
 	return &service{
-		db:            db,
-		blockNum:      blockNum,
-		trail:         trailNum,
-		sleepInterval: sleepInterval,
+		db:            cfg.DB,
+		blockNum:      cfg.BlockNum,
+		trail:         cfg.Trail,
+		sleepInterval: cfg.SleepInterval,
 		logger:        log.New(),
-		chainCfg:      chainCfg,
+		chainCfg:      cfg.ChainCfg,
 		quitChan:      make(chan bool),
 		progressChan:  progressChan,
 	}

@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	blockNum               = 1
 	trail                  = 0
 	validatorSleepInterval = uint(5)
 )
@@ -44,8 +45,15 @@ var _ = Describe("Integration test", func() {
 	timeout := 4 * time.Second
 
 	db := shared.SetupDB()
+	cfg := validator.Config{
+		DB:            db,
+		BlockNum:      blockNum,
+		Trail:         trail,
+		SleepInterval: validatorSleepInterval,
+		ChainCfg:      validator.IntegrationTestChainConfig,
+	}
 	validationProgressChan := make(chan uint64)
-	service := validator.NewService(db, 1, trail, validatorSleepInterval, validator.IntegrationTestChainConfig, validationProgressChan)
+	service := validator.NewService(&cfg, validationProgressChan)
 
 	wg := new(sync.WaitGroup)
 
