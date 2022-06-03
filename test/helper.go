@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	ethServerIntegration "github.com/vulcanize/ipld-eth-server/v3/test"
+	ethServerIntegration "github.com/vulcanize/ipld-eth-server/v4/test"
 )
 
 type PutResult struct {
