@@ -106,6 +106,7 @@ jobs:
           docker-compose  \
           -f "$GITHUB_WORKSPACE/stack-orchestrator/docker/local/docker-compose-db-migration.yml" \
           -f "$GITHUB_WORKSPACE/stack-orchestrator/docker/latest/docker-compose-timescale-db.yml" \
+          --env-file "$GITHUB_WORKSPACE/config.sh" \
           up -d --build
       - name: Run unit test.
         run: |
