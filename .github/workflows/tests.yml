@@ -66,7 +66,6 @@ jobs:
       - name: Run integration test.
         run: |
           cd $GITHUB_WORKSPACE/ipld-eth-db-validator
-          while [ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:8545)" != "200" ]; do echo "waiting for geth-statediff..." && sleep 5; done && \
           ./scripts/run_integration_test.sh
 
   unittest:
