@@ -1,17 +1,18 @@
 module github.com/vulcanize/ipld-eth-db-validator
 
-go 1.17
+go 1.18
 
 require (
-	github.com/ethereum/go-ethereum v1.10.17
+	github.com/ethereum/go-ethereum v1.10.18
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.19.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.11.0
-	github.com/vulcanize/ipfs-ethdb/v4 v4.0.0-alpha
-	github.com/vulcanize/ipld-eth-server/v4 v4.0.1-alpha
+	github.com/vulcanize/ipfs-ethdb/v4 v4.0.1-alpha
+	github.com/vulcanize/ipld-eth-server/v3 v3.2.1
+	github.com/vulcanize/ipld-eth-server/v4 v4.0.2-alpha
 )
 
 require (
@@ -60,7 +61,7 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
 	github.com/holiman/uint256 v1.2.0 // indirect
-	github.com/huin/goupnp v1.0.3-0.20220313090229-ca81a64b4204 // indirect
+	github.com/huin/goupnp v1.0.3 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/ipfs/bbloom v0.0.4 // indirect
 	github.com/ipfs/go-bitswap v0.4.0 // indirect
@@ -171,11 +172,12 @@ require (
 	github.com/libp2p/go-ws-transport v0.5.0 // indirect
 	github.com/libp2p/go-yamux/v2 v2.2.0 // indirect
 	github.com/libp2p/zeroconf/v2 v2.0.0 // indirect
-	github.com/lucas-clemente/quic-go v0.23.0 // indirect
+	github.com/lucas-clemente/quic-go v0.26.0 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mailgun/groupcache/v2 v2.3.0 // indirect
-	github.com/marten-seemann/qtls-go1-16 v0.1.4 // indirect
-	github.com/marten-seemann/qtls-go1-17 v0.1.0 // indirect
+	github.com/marten-seemann/qtls-go1-16 v0.1.5 // indirect
+	github.com/marten-seemann/qtls-go1-17 v0.1.1 // indirect
+	github.com/marten-seemann/qtls-go1-18 v0.1.1 // indirect
 	github.com/marten-seemann/tcp v0.0.0-20210406111302-dfbc87cc63fd // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
@@ -233,7 +235,7 @@ require (
 	github.com/tklauser/go-sysconf v0.3.6 // indirect
 	github.com/tklauser/numcpus v0.2.2 // indirect
 	github.com/tyler-smith/go-bip39 v1.0.1-0.20181017060643-dbb3b84ba2ef // indirect
-	github.com/vulcanize/eth-ipfs-state-validator/v4 v4.0.0-alpha // indirect
+	github.com/vulcanize/eth-ipfs-state-validator/v4 v4.0.1-alpha // indirect
 	github.com/whyrusleeping/base32 v0.0.0-20170828182744-c30ac30633cc // indirect
 	github.com/whyrusleeping/cbor-gen v0.0.0-20210219115102-f37d292932f2 // indirect
 	github.com/whyrusleeping/chunker v0.0.0-20181014151217-fe64bd25879f // indirect
@@ -270,4 +272,4 @@ require (
 	lukechampine.com/blake3 v1.1.6 // indirect
 )
 
-replace github.com/ethereum/go-ethereum v1.10.17 => github.com/vulcanize/go-ethereum v1.10.17-statediff-4.0.1-alpha
+replace github.com/ethereum/go-ethereum v1.10.18 => github.com/vulcanize/go-ethereum v1.10.18-statediff-4.0.2-alpha

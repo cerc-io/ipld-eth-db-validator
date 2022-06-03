@@ -6,18 +6,18 @@
 
   - Clone [stack-orchestrator](https://github.com/vulcanize/stack-orchestrator) and [go-ethereum](https://github.com/vulcanize/go-ethereum) repositories.
 
-  - Checkout [v4 release](https://github.com/vulcanize/go-ethereum/releases/tag/v1.10.17-statediff-4.0.1-alpha) in go-ethereum repo.
+  - Checkout [v4 release](https://github.com/vulcanize/go-ethereum/releases/tag/v1.10.18-statediff-4.0.2-alpha) in go-ethereum repo.
 
     ```bash
     # In go-ethereum repo.
-    git checkout v1.10.17-statediff-4.0.1-alpha
+    git checkout v1.10.18-statediff-4.0.2-alpha
     ```
 
   - Checkout working commit in stack-orchestrator repo.
 
     ```bash
     # In stack-orchestrator repo.
-    git checkout 42af57a2963bb6ca55fb5fcb16ed75b39fae60f9
+    git checkout 418957a1f745c921b21286c13bb033f922a91ae9
     ```
 
 ## Run
@@ -55,6 +55,10 @@
       vulcanize_test_contract=~/ipld-eth-db-validator/test/contract
 
       db_write=true
+      ipld_eth_server_db_dependency=access-node
+      go_ethereum_db_dependency=access-node
+
+      connecting_db_name=vulcanize_testing_v4
       ```
 
     - Run stack-orchestrator:
