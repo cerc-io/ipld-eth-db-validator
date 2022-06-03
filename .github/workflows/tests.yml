@@ -3,8 +3,9 @@ on:
   workflow_call:
 
 env:
-  STACK_ORCHESTRATOR_REF: "main"
-  GO_ETHEREUM_REF: "v1.10.18-statediff-v3"
+  STACK_ORCHESTRATOR_REF: 418957a1f745c921b21286c13bb033f922a91ae9
+  GO_ETHEREUM_REF: "v1.10.18-statediff-4.0.2-alpha"
+  IPLD_ETH_DB_REF: 91d30b9ea1acecd0a7f4307390a98bf3e289b8d7
 
 jobs:
   integrationtest:
@@ -33,11 +34,19 @@ jobs:
           ref: ${{ env.GO_ETHEREUM_REF }}
           repository: vulcanize/go-ethereum
           path: "./go-ethereum/"
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ env.IPLD_ETH_DB_REF }}
+          repository: vulcanize/ipld-eth-db
+          path: "./ipld-eth-db/"
       - name: Create config file
         run: |
-          echo vulcanize_go_ethereum=$GITHUB_WORKSPACE/go-ethereum/ > ./config.sh
           echo vulcanize_test_contract=$GITHUB_WORKSPACE/ipld-eth-db-validator/test/contract >> ./config.sh
+          echo vulcanize_go_ethereum=$GITHUB_WORKSPACE/go-ethereum/ > ./config.sh
+          echo vulcanize_ipld_eth_db=$GITHUB_WORKSPACE/ipld-eth-db/ >> ./config.sh
           echo db_write=$DB_WRITE >> ./config.sh
+          echo go_ethereum_db_dependency=access-node >> ./config.sh
+          echo connecting_db_name=vulcanize_testing_v4 >> ./config.sh
           cat ./config.sh
       - name: Build geth
         run: |
@@ -48,14 +57,16 @@ jobs:
       - name: Run docker compose
         run: |
           docker-compose  \
-          -f "$GITHUB_WORKSPACE/stack-orchestrator/docker/latest/docker-compose-db.yml" \
+          -f "$GITHUB_WORKSPACE/stack-orchestrator/docker/local/docker-compose-db-migration.yml" \
           -f "$GITHUB_WORKSPACE/stack-orchestrator/docker/local/docker-compose-go-ethereum.yml" \
           -f "$GITHUB_WORKSPACE/stack-orchestrator/docker/local/docker-compose-contract.yml" \
+          -f "$GITHUB_WORKSPACE/stack-orchestrator/docker/latest/docker-compose-timescale-db.yml" \
           --env-file "$GITHUB_WORKSPACE/config.sh" \
           up -d --build
       - name: Run integration test.
         run: |
           cd $GITHUB_WORKSPACE/ipld-eth-db-validator
+          while [ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:8545)" != "200" ]; do echo "waiting for geth-statediff..." && sleep 5; done && \
           ./scripts/run_integration_test.sh
 
   unittest:
@@ -79,12 +90,24 @@ jobs:
           ref: ${{ env.STACK_ORCHESTRATOR_REF }}
           path: "./stack-orchestrator/"
           repository: vulcanize/stack-orchestrator
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ env.IPLD_ETH_DB_REF }}
+          repository: vulcanize/ipld-eth-db
+          path: "./ipld-eth-db/"
+      - name: Create config file
+        run: |
+          echo vulcanize_ipld_eth_db=$GITHUB_WORKSPACE/ipld-eth-db/ >> ./config.sh
+          echo db_write=$DB_WRITE >> ./config.sh
+          echo connecting_db_name=vulcanize_testing_v4 >> ./config.sh
+          cat ./config.sh
       - name: Run docker compose
         run: |
           docker-compose  \
-          -f "$GITHUB_WORKSPACE/stack-orchestrator/docker/latest/docker-compose-db.yml" \
+          -f "$GITHUB_WORKSPACE/stack-orchestrator/docker/local/docker-compose-db-migration.yml" \
+          -f "$GITHUB_WORKSPACE/stack-orchestrator/docker/latest/docker-compose-timescale-db.yml" \
           up -d --build
       - name: Run unit test.
         run: |
           cd $GITHUB_WORKSPACE/ipld-eth-db-validator
-          PGPASSWORD=password DATABASE_USER=vdbm DATABASE_PORT=8077 DATABASE_PASSWORD=password DATABASE_HOSTNAME=127.0.0.1 DATABASE_NAME=vulcanize_testing make test
+          PGPASSWORD=password DATABASE_USER=vdbm DATABASE_PORT=8066 DATABASE_PASSWORD=password DATABASE_HOSTNAME=127.0.0.1 DATABASE_NAME=vulcanize_testing_v4 make test
