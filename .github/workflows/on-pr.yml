@@ -1,0 +1,6 @@
+name: Run all tests
+on: [pull_request]
+
+jobs:
+  run-tests:
+    uses: ./.github/workflows/tests.yml

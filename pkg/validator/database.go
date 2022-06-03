@@ -1,8 +1,12 @@
 package validator
 
 import (
+	"errors"
+
 	"github.com/ethereum/go-ethereum/ethdb"
 )
+
+var errNotSupported = errors.New("this operation is not supported")
 
 type database struct {
 	ethDB ethdb.Database
@@ -105,7 +109,7 @@ func (d *database) NewBatchWithSize(size int) ethdb.Batch {
 	return d.ethDB.NewBatchWithSize(size)
 }
 
-func (d *database) ReadAncients(fn func(ethdb.AncientReader) error) (err error) {
+func (d *database) ReadAncients(fn func(ethdb.AncientReaderOp) error) (err error) {
 	return d.ethDB.ReadAncients(fn)
 }
 
@@ -116,4 +120,9 @@ func (d *database) Close() error {
 // NewSnapshot creates a database snapshot based on the current state.
 func (d *database) NewSnapshot() (ethdb.Snapshot, error) {
 	return d.NewSnapshot()
+}
+
+// NewSnapshot creates a database snapshot based on the current state.
+func (d *database) AncientDatadir() (string, error) {
+	return "", errNotSupported
 }
