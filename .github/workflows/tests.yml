@@ -48,7 +48,7 @@ jobs:
       - name: Run docker compose
         run: |
           docker-compose  \
-          -f "$GITHUB_WORKSPACE/stack-orchestrator/docker/latest/docker-compose-db-sharding.yml" \
+          -f "$GITHUB_WORKSPACE/stack-orchestrator/docker/local/docker-compose-db-sharding.yml" \
           -f "$GITHUB_WORKSPACE/stack-orchestrator/docker/local/docker-compose-go-ethereum.yml" \
           -f "$GITHUB_WORKSPACE/stack-orchestrator/docker/local/docker-compose-contract.yml" \
           --env-file "$GITHUB_WORKSPACE/config.sh" \
@@ -79,10 +79,21 @@ jobs:
           ref: ${{ env.STACK_ORCHESTRATOR_REF }}
           path: "./stack-orchestrator/"
           repository: vulcanize/stack-orchestrator
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ env.IPLD_ETH_DB_REF }}
+          repository: vulcanize/ipld-eth-db
+          path: "./ipld-eth-db/"
+      - name: Create config file
+        run: |
+          echo vulcanize_ipld_eth_db=$GITHUB_WORKSPACE/ipld-eth-db/ >> ./config.sh
+          echo db_write=$DB_WRITE >> ./config.sh
+          cat ./config.sh
       - name: Run docker compose
         run: |
           docker-compose  \
-          -f "$GITHUB_WORKSPACE/stack-orchestrator/docker/latest/docker-compose-db-sharding.yml" \
+          -f "$GITHUB_WORKSPACE/stack-orchestrator/docker/local/docker-compose-db-sharding.yml" \
+          --env-file "$GITHUB_WORKSPACE/config.sh" \
           up -d --build
       - name: Run unit test.
         run: |
