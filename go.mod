@@ -11,7 +11,6 @@ require (
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.11.0
 	github.com/vulcanize/ipfs-ethdb/v4 v4.0.1-alpha
-	github.com/vulcanize/ipld-eth-server/v3 v3.2.1
 	github.com/vulcanize/ipld-eth-server/v4 v4.0.2-alpha
 )
 

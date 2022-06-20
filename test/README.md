@@ -17,7 +17,7 @@
 
     ```bash
     # In stack-orchestrator repo.
-    git checkout 418957a1f745c921b21286c13bb033f922a91ae9
+    git checkout 382aca8e42bc5e33f301f77cdd2e09cc80602fc3
     ```
 
 ## Run
@@ -55,10 +55,6 @@
       vulcanize_test_contract=~/ipld-eth-db-validator/test/contract
 
       db_write=true
-      ipld_eth_server_db_dependency=access-node
-      go_ethereum_db_dependency=access-node
-
-      connecting_db_name=vulcanize_testing_v4
       ```
 
     - Run stack-orchestrator:
@@ -69,7 +65,7 @@
 
       ./wrapper.sh \
       -e docker \
-      -d ../docker/latest/docker-compose-db.yml \
+      -d ../docker/latest/docker-compose-db-sharding.yml \
       -d ../docker/local/docker-compose-go-ethereum.yml \
       -d ../docker/local/docker-compose-contract.yml \
       -v remove \

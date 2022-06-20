@@ -138,6 +138,14 @@ func (s *service) Validate(ctx context.Context, api *ipldEth.PublicEthAPI, idxBl
 		}
 
 		s.logger.Infof("state root verified for block %d", idxBlockNum)
+
+		err = ValidateReferentialIntegrity(s.db, idxBlockNum)
+		if err != nil {
+			s.logger.Errorf("failed to verify referential integrity at block %d", idxBlockNum)
+			return idxBlockNum, err
+		}
+		s.logger.Infof("referential integrity verified for block %d", idxBlockNum)
+
 		if s.progressChan != nil {
 			s.progressChan <- idxBlockNum
 		}
