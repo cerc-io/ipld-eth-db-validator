@@ -3,9 +3,9 @@ on:
   workflow_call:
 
 env:
-  STACK_ORCHESTRATOR_REF: "b3cb26e93b7e387d96417c81f880a3b8699b67db"
-  GO_ETHEREUM_REF: "v1.10.19-statediff-4.0.2-alpha" # Use the tag, we are going to download the bin not build it.
-  IPLD_ETH_DB_REF: "4e948c58ce20c20ab633289f986d2ed2a1fe02ec"
+  STACK_ORCHESTRATOR_REF: "f2fd766f5400fcb9eb47b50675d2e3b1f2753702"
+  GO_ETHEREUM_REF: "v1.10.19-statediff-4.1.0-alpha" # Use the tag, we are going to download the bin not build it.
+  IPLD_ETH_DB_REF: "b59505eab252670c622b42ce60621e9747fb64f9"
 
 jobs:
   integrationtest:
@@ -17,33 +17,41 @@ jobs:
     steps:
       - name: Create GOPATH
         run: mkdir -p /tmp/go
+
       - uses: actions/setup-go@v3
         with:
           go-version: ">=1.18.0"
           check-latest: true
+
       - uses: actions/checkout@v2
         with:
           path: "./ipld-eth-db-validator"
+
       - uses: actions/checkout@v2
         with:
           ref: ${{ env.STACK_ORCHESTRATOR_REF }}
           path: "./stack-orchestrator/"
           repository: vulcanize/stack-orchestrator
+
       - uses: actions/checkout@v2
         with:
           ref: ${{ env.IPLD_ETH_DB_REF }}
           repository: vulcanize/ipld-eth-db
           path: "./ipld-eth-db/"
+
       - name: Create config file
         run: |
           echo vulcanize_test_contract=$GITHUB_WORKSPACE/ipld-eth-db-validator/test/contract >> ./config.sh
           echo vulcanize_ipld_eth_db=$GITHUB_WORKSPACE/ipld-eth-db/ >> ./config.sh
+          echo genesis_file_path=start-up-files/go-ethereum/genesis.json >> ./config.sh
           echo db_write=$DB_WRITE >> ./config.sh
           cat ./config.sh
-      - name: Download Geth geth
+
+      - name: Download Geth
         run: |
           cd $GITHUB_WORKSPACE/stack-orchestrator/helper-scripts
           wget https://github.com/vulcanize/go-ethereum/releases/download/${{env.GO_ETHEREUM_REF}}/geth-linux-amd64
+
       - name: Run docker compose
         run: |
           docker-compose  \
@@ -52,6 +60,7 @@ jobs:
           -f "$GITHUB_WORKSPACE/stack-orchestrator/docker/local/docker-compose-contract.yml" \
           --env-file "$GITHUB_WORKSPACE/config.sh" \
           up -d --build
+
       - name: Run integration test.
         run: |
           cd $GITHUB_WORKSPACE/ipld-eth-db-validator
@@ -59,42 +68,24 @@ jobs:
 
   unittest:
     name: Run unit tests
-    env:
-      GOPATH: /tmp/go
-      DB_WRITE: true
     runs-on: ubuntu-latest
     steps:
       - name: Create GOPATH
         run: mkdir -p /tmp/go
+
       - uses: actions/setup-go@v3
         with:
           go-version: ">=1.18.0"
           check-latest: true
-      - uses: actions/checkout@v2
-        with:
-          path: "./ipld-eth-db-validator"
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ env.STACK_ORCHESTRATOR_REF }}
-          path: "./stack-orchestrator/"
-          repository: vulcanize/stack-orchestrator
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ env.IPLD_ETH_DB_REF }}
-          repository: vulcanize/ipld-eth-db
-          path: "./ipld-eth-db/"
-      - name: Create config file
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Spin up database
         run: |
-          echo vulcanize_ipld_eth_db=$GITHUB_WORKSPACE/ipld-eth-db/ >> ./config.sh
-          echo db_write=$DB_WRITE >> ./config.sh
-          cat ./config.sh
-      - name: Run docker compose
+          docker-compose up -d
+
+      - name: Run unit tests
         run: |
-          docker-compose  \
-          -f "$GITHUB_WORKSPACE/stack-orchestrator/docker/local/docker-compose-db-sharding.yml" \
-          --env-file "$GITHUB_WORKSPACE/config.sh" \
-          up -d --build
-      - name: Run unit test.
-        run: |
-          cd $GITHUB_WORKSPACE/ipld-eth-db-validator
+          sleep 30
           PGPASSWORD=password DATABASE_USER=vdbm DATABASE_PORT=8077 DATABASE_PASSWORD=password DATABASE_HOSTNAME=127.0.0.1 DATABASE_NAME=vulcanize_testing make test

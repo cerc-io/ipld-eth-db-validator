@@ -48,6 +48,7 @@ const (
 						FROM eth.receipt_cids
 						LEFT JOIN eth.transaction_cids ON (
 							receipt_cids.tx_id = transaction_cids.tx_hash
+							AND receipt_cids.header_id = transaction_cids.header_id
 							AND receipt_cids.block_number = transaction_cids.block_number
 						)
 						WHERE
@@ -110,6 +111,7 @@ const (
 						FROM eth.log_cids
 						LEFT JOIN eth.receipt_cids ON (
 							log_cids.rct_id = receipt_cids.tx_id
+							AND log_cids.header_id = receipt_cids.header_id
 							AND log_cids.block_number = receipt_cids.block_number
 						)
 						WHERE
