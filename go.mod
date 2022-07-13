@@ -11,7 +11,7 @@ require (
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.11.0
 	github.com/vulcanize/ipfs-ethdb/v4 v4.0.2-alpha
-	github.com/vulcanize/ipld-eth-server/v4 v4.0.5-alpha
+	github.com/vulcanize/ipld-eth-server/v4 v4.1.0-alpha
 )
 
 require (
@@ -275,4 +275,4 @@ require (
 	lukechampine.com/blake3 v1.1.6 // indirect
 )
 
-replace github.com/ethereum/go-ethereum v1.10.19 => github.com/vulcanize/go-ethereum v1.10.19-statediff-4.0.2-alpha
+replace github.com/ethereum/go-ethereum v1.10.19 => github.com/vulcanize/go-ethereum v1.10.19-statediff-4.1.0-alpha
