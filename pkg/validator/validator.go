@@ -24,6 +24,8 @@ import (
 	ipfsethdb "github.com/vulcanize/ipfs-ethdb/v4/postgres"
 	ipldEth "github.com/vulcanize/ipld-eth-server/v4/pkg/eth"
 	ethServerShared "github.com/vulcanize/ipld-eth-server/v4/pkg/shared"
+
+	"github.com/vulcanize/ipld-eth-db-validator/pkg/prom"
 )
 
 var (
@@ -113,6 +115,8 @@ func (s *service) Start(ctx context.Context, wg *sync.WaitGroup) {
 				s.logger.Fatal(err)
 				return
 			}
+
+			prom.SetLastValidatedBlock(float64(idxBlockNum))
 		}
 	}
 }

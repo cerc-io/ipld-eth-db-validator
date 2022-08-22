@@ -12,3 +12,10 @@
 
 [ethereum]
     chainConfig = "./chain.json"
+
+[prom]
+    metrics = true
+    http = true
+    httpAddr = "localhost"
+    httpPort = "9001"
+    dbStats = true

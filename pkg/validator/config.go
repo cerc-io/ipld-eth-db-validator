@@ -11,6 +11,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
 	"github.com/vulcanize/ipld-eth-server/v4/pkg/shared"
+
+	"github.com/vulcanize/ipld-eth-db-validator/pkg/prom"
 )
 
 var (
@@ -123,7 +125,12 @@ func (c *Config) setupDB() error {
 	if err != nil {
 		return fmt.Errorf("failed to create config: %w", err)
 	}
-
 	c.DB = db
+
+	// Enable DB stats
+	if viper.GetBool("prom.dbStats") {
+		prom.RegisterDBCollector(c.dbConfig.DatabaseName, c.DB)
+	}
+
 	return nil
 }
