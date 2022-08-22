@@ -9,9 +9,12 @@
     block-height = 1
     trail  = 16
     sleepInterval = 10
+    stateDiffOnMiss = true
+    stateDiffTimeout = 60
 
 [ethereum]
     chainConfig = "./chain.json"
+    httpPath = "localhost:8545"
 
 [prom]
     metrics = true

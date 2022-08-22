@@ -52,16 +52,22 @@ func init() {
 	stateValidatorCmd.PersistentFlags().String("block-height", "1", "block height to initiate state validation")
 	stateValidatorCmd.PersistentFlags().String("trail", "16", "trail of block height to validate")
 	stateValidatorCmd.PersistentFlags().String("sleep-interval", "10", "sleep interval in seconds after validator has caught up to (head-trail) height")
+	stateValidatorCmd.PersistentFlags().Bool("state-diff-on-miss", false, "whether to perform statediffing call on a db miss")
+	stateValidatorCmd.PersistentFlags().Uint("state-diff-timeout", 60, "statediffing call timeout period (in sec)")
 
 	stateValidatorCmd.PersistentFlags().String("eth-chain-config", "", "path to json chain config")
 	stateValidatorCmd.PersistentFlags().String("eth-chain-id", "1", "eth chain id")
+	stateValidatorCmd.PersistentFlags().String("eth-http-path", "", "http url for a statediffing node")
 
 	_ = viper.BindPFlag("validate.block-height", stateValidatorCmd.PersistentFlags().Lookup("block-height"))
 	_ = viper.BindPFlag("validate.trail", stateValidatorCmd.PersistentFlags().Lookup("trail"))
 	_ = viper.BindPFlag("validate.sleepInterval", stateValidatorCmd.PersistentFlags().Lookup("sleep-interval"))
+	_ = viper.BindPFlag("validate.stateDiffOnMiss", stateValidatorCmd.PersistentFlags().Lookup("state-diff-on-miss"))
+	_ = viper.BindPFlag("validate.stateDiffTimeout", stateValidatorCmd.PersistentFlags().Lookup("state-diff-timeout"))
 
 	_ = viper.BindPFlag("ethereum.chainConfig", stateValidatorCmd.PersistentFlags().Lookup("eth-chain-config"))
 	_ = viper.BindPFlag("ethereum.chainID", stateValidatorCmd.PersistentFlags().Lookup("eth-chain-id"))
+	_ = viper.BindPFlag("ethereum.httpPath", stateValidatorCmd.PersistentFlags().Lookup("eth-http-path"))
 }
 
 func initConfig() {

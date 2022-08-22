@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/ethereum/go-ethereum/statediff/indexer/database/sql/postgres"
 	"github.com/jmoiron/sqlx"
@@ -63,7 +64,10 @@ type Config struct {
 	dbConfig postgres.Config
 	DB       *sqlx.DB
 
-	ChainCfg *params.ChainConfig
+	ChainCfg         *params.ChainConfig
+	Client           *rpc.Client
+	StateDiffOnMiss  bool
+	StateDiffTimeout uint
 
 	BlockNum, Trail uint64
 	SleepInterval   uint
@@ -83,6 +87,10 @@ func NewConfig() (*Config, error) {
 
 	cfg.Trail = viper.GetUint64("validate.trail")
 	cfg.SleepInterval = viper.GetUint("validate.sleepInterval")
+	cfg.StateDiffOnMiss = viper.GetBool("validate.stateDiffOnMiss")
+	if cfg.StateDiffOnMiss {
+		cfg.StateDiffTimeout = viper.GetUint("validate.stateDiffTimeout")
+	}
 
 	chainConfigPath := viper.GetString("ethereum.chainConfig")
 	if chainConfigPath != "" {
@@ -94,6 +102,15 @@ func NewConfig() (*Config, error) {
 	}
 	if err != nil {
 		return nil, err
+	}
+
+	ethHTTP := viper.GetString("ethereum.httpPath")
+	if ethHTTP != "" {
+		ethHTTPEndpoint := fmt.Sprintf("http://%s", ethHTTP)
+		cfg.Client, err = rpc.Dial(ethHTTPEndpoint)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return cfg, nil

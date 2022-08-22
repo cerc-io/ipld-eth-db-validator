@@ -8,7 +8,6 @@ import (
 
 // ValidateReferentialIntegrity validates referential integrity at the given height
 func ValidateReferentialIntegrity(db *sqlx.DB, blockNumber uint64) error {
-
 	err := ValidateHeaderCIDsRef(db, blockNumber)
 	if err != nil {
 		return err

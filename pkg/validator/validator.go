@@ -2,6 +2,7 @@ package validator
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
@@ -18,7 +19,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/jmoiron/sqlx"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 
 	ipfsethdb "github.com/vulcanize/ipfs-ethdb/v4/postgres"
@@ -42,20 +45,28 @@ type service struct {
 	sleepInterval   uint
 	logger          *log.Logger
 	chainCfg        *params.ChainConfig
-	quitChan        chan bool
-	progressChan    chan uint64
+
+	stateDiffOnMiss  bool
+	stateDiffTimeout uint
+	ethClient        *rpc.Client
+
+	quitChan     chan bool
+	progressChan chan uint64
 }
 
 func NewService(cfg *Config, progressChan chan uint64) *service {
 	return &service{
-		db:            cfg.DB,
-		blockNum:      cfg.BlockNum,
-		trail:         cfg.Trail,
-		sleepInterval: cfg.SleepInterval,
-		logger:        log.New(),
-		chainCfg:      cfg.ChainCfg,
-		quitChan:      make(chan bool),
-		progressChan:  progressChan,
+		db:               cfg.DB,
+		blockNum:         cfg.BlockNum,
+		trail:            cfg.Trail,
+		sleepInterval:    cfg.SleepInterval,
+		logger:           log.New(),
+		chainCfg:         cfg.ChainCfg,
+		stateDiffOnMiss:  cfg.StateDiffOnMiss,
+		stateDiffTimeout: cfg.StateDiffTimeout,
+		ethClient:        cfg.Client,
+		quitChan:         make(chan bool),
+		progressChan:     progressChan,
 	}
 }
 
@@ -135,7 +146,19 @@ func (s *service) Validate(ctx context.Context, api *ipldEth.PublicEthAPI, idxBl
 
 	// Check if it block at height idxBlockNum can be validated
 	if idxBlockNum <= headBlockNum-s.trail {
-		err = ValidateBlock(ctx, api, idxBlockNum)
+		blockToBeValidated, err := api.B.BlockByNumber(ctx, rpc.BlockNumber(idxBlockNum))
+		if err != nil {
+			s.logger.Errorf("failed to fetch block at height %d", idxBlockNum)
+			return idxBlockNum, err
+		}
+
+		// Make a writeStateDiffAt call if block not found in the db
+		if blockToBeValidated == nil {
+			err = s.writeStateDiffAt(idxBlockNum)
+			return idxBlockNum, err
+		}
+
+		err = ValidateBlock(blockToBeValidated, api.B, idxBlockNum)
 		if err != nil {
 			s.logger.Errorf("failed to verify state root at block %d", idxBlockNum)
 			return idxBlockNum, err
@@ -163,14 +186,37 @@ func (s *service) Validate(ctx context.Context, api *ipldEth.PublicEthAPI, idxBl
 	return idxBlockNum, nil
 }
 
-// ValidateBlock validates block at the given height
-func ValidateBlock(ctx context.Context, api *ipldEth.PublicEthAPI, blockNumber uint64) error {
-	blockToBeValidated, err := api.B.BlockByNumber(ctx, rpc.BlockNumber(blockNumber))
-	if err != nil {
+// writeStateDiffAt calls out to a statediffing geth client to fill in a gap in the index
+func (s *service) writeStateDiffAt(height uint64) error {
+	if !s.stateDiffOnMiss {
+		return nil
+	}
+
+	var data json.RawMessage
+	params := statediff.Params{
+		IntermediateStateNodes:   true,
+		IntermediateStorageNodes: true,
+		IncludeBlock:             true,
+		IncludeReceipts:          true,
+		IncludeTD:                true,
+		IncludeCode:              true,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s.stateDiffTimeout*uint(time.Second)))
+	defer cancel()
+
+	s.logger.Infof("making writeStateDiffAt call at height %d", height)
+	if err := s.ethClient.CallContext(ctx, &data, "statediff_writeStateDiffAt", height, params); err != nil {
+		logrus.Errorf("writeStateDiffAt %d faild with err %s", height, err.Error())
 		return err
 	}
 
-	stateDB, err := applyTransaction(blockToBeValidated, api.B)
+	return nil
+}
+
+// ValidateBlock validates block at the given height
+func ValidateBlock(blockToBeValidated *types.Block, b *ipldEth.Backend, blockNumber uint64) error {
+	stateDB, err := applyTransaction(blockToBeValidated, b)
 	if err != nil {
 		return err
 	}
