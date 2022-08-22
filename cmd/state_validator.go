@@ -53,13 +53,15 @@ func init() {
 	stateValidatorCmd.PersistentFlags().String("trail", "16", "trail of block height to validate")
 	stateValidatorCmd.PersistentFlags().String("sleep-interval", "10", "sleep interval in seconds after validator has caught up to (head-trail) height")
 
-	stateValidatorCmd.PersistentFlags().String("chain-config", "", "path to chain config")
+	stateValidatorCmd.PersistentFlags().String("eth-chain-config", "", "path to json chain config")
+	stateValidatorCmd.PersistentFlags().String("eth-chain-id", "1", "eth chain id")
 
 	_ = viper.BindPFlag("validate.block-height", stateValidatorCmd.PersistentFlags().Lookup("block-height"))
 	_ = viper.BindPFlag("validate.trail", stateValidatorCmd.PersistentFlags().Lookup("trail"))
 	_ = viper.BindPFlag("validate.sleepInterval", stateValidatorCmd.PersistentFlags().Lookup("sleep-interval"))
 
-	_ = viper.BindPFlag("ethereum.chainConfig", stateValidatorCmd.PersistentFlags().Lookup("chain-config"))
+	_ = viper.BindPFlag("ethereum.chainConfig", stateValidatorCmd.PersistentFlags().Lookup("eth-chain-config"))
+	_ = viper.BindPFlag("ethereum.chainID", stateValidatorCmd.PersistentFlags().Lookup("eth-chain-id"))
 }
 
 func initConfig() {

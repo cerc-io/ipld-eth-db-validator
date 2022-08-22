@@ -83,7 +83,13 @@ func NewConfig() (*Config, error) {
 	cfg.SleepInterval = viper.GetUint("validate.sleepInterval")
 
 	chainConfigPath := viper.GetString("ethereum.chainConfig")
-	cfg.ChainCfg, err = statediff.LoadConfig(chainConfigPath)
+	if chainConfigPath != "" {
+		cfg.ChainCfg, err = statediff.LoadConfig(chainConfigPath)
+	} else {
+		// read chainID if chain config path not provided
+		chainID := viper.GetUint64("ethereum.chainID")
+		cfg.ChainCfg, err = statediff.ChainConfig(chainID)
+	}
 	if err != nil {
 		return nil, err
 	}
