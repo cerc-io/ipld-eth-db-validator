@@ -16,17 +16,6 @@ import (
 	"github.com/vulcanize/ipld-eth-db-validator/pkg/prom"
 )
 
-var (
-	DATABASE_NAME                 = "DATABASE_NAME"
-	DATABASE_HOSTNAME             = "DATABASE_HOSTNAME"
-	DATABASE_PORT                 = "DATABASE_PORT"
-	DATABASE_USER                 = "DATABASE_USER"
-	DATABASE_PASSWORD             = "DATABASE_PASSWORD"
-	DATABASE_MAX_IDLE_CONNECTIONS = "DATABASE_MAX_IDLE_CONNECTIONS"
-	DATABASE_MAX_OPEN_CONNECTIONS = "DATABASE_MAX_OPEN_CONNECTIONS"
-	DATABASE_MAX_CONN_LIFETIME    = "DATABASE_MAX_CONN_LIFETIME"
-)
-
 var IntegrationTestChainConfig = &params.ChainConfig{
 	ChainID:             big.NewInt(99),
 	HomesteadBlock:      big.NewInt(0),
@@ -64,10 +53,10 @@ type Config struct {
 	dbConfig postgres.Config
 	DB       *sqlx.DB
 
-	ChainCfg         *params.ChainConfig
-	Client           *rpc.Client
-	StateDiffOnMiss  bool
-	StateDiffTimeout uint
+	ChainCfg              *params.ChainConfig
+	Client                *rpc.Client
+	StateDiffMissingBlock bool
+	StateDiffTimeout      uint
 
 	BlockNum, Trail uint64
 	SleepInterval   uint
@@ -80,52 +69,20 @@ func NewConfig() (*Config, error) {
 		return nil, err
 	}
 
-	cfg.BlockNum = viper.GetUint64("validate.block-height")
-	if cfg.BlockNum < 1 {
-		return nil, fmt.Errorf("block height cannot be less the 1")
-	}
-
-	cfg.Trail = viper.GetUint64("validate.trail")
-	cfg.SleepInterval = viper.GetUint("validate.sleepInterval")
-	cfg.StateDiffOnMiss = viper.GetBool("validate.stateDiffOnMiss")
-	if cfg.StateDiffOnMiss {
-		cfg.StateDiffTimeout = viper.GetUint("validate.stateDiffTimeout")
-	}
-
-	chainConfigPath := viper.GetString("ethereum.chainConfig")
-	if chainConfigPath != "" {
-		cfg.ChainCfg, err = statediff.LoadConfig(chainConfigPath)
-	} else {
-		// read chainID if chain config path not provided
-		chainID := viper.GetUint64("ethereum.chainID")
-		cfg.ChainCfg, err = statediff.ChainConfig(chainID)
-	}
+	err = cfg.setupEth()
 	if err != nil {
 		return nil, err
 	}
 
-	ethHTTP := viper.GetString("ethereum.httpPath")
-	if ethHTTP != "" {
-		ethHTTPEndpoint := fmt.Sprintf("http://%s", ethHTTP)
-		cfg.Client, err = rpc.Dial(ethHTTPEndpoint)
-		if err != nil {
-			return nil, err
-		}
+	err = cfg.setupValidator()
+	if err != nil {
+		return nil, err
 	}
 
 	return cfg, nil
 }
 
 func (c *Config) setupDB() error {
-	_ = viper.BindEnv("database.name", DATABASE_NAME)
-	_ = viper.BindEnv("database.hostname", DATABASE_HOSTNAME)
-	_ = viper.BindEnv("database.port", DATABASE_PORT)
-	_ = viper.BindEnv("database.user", DATABASE_USER)
-	_ = viper.BindEnv("database.password", DATABASE_PASSWORD)
-	_ = viper.BindEnv("database.maxIdle", DATABASE_MAX_IDLE_CONNECTIONS)
-	_ = viper.BindEnv("database.maxOpen", DATABASE_MAX_OPEN_CONNECTIONS)
-	_ = viper.BindEnv("database.maxLifetime", DATABASE_MAX_CONN_LIFETIME)
-
 	// DB Config
 	c.dbConfig.DatabaseName = viper.GetString("database.name")
 	c.dbConfig.Hostname = viper.GetString("database.hostname")
@@ -150,4 +107,45 @@ func (c *Config) setupDB() error {
 	}
 
 	return nil
+}
+
+func (c *Config) setupEth() error {
+	var err error
+	chainConfigPath := viper.GetString("ethereum.chainConfig")
+	if chainConfigPath != "" {
+		c.ChainCfg, err = statediff.LoadConfig(chainConfigPath)
+	} else {
+		// read chainID if chain config path not provided
+		chainID := viper.GetUint64("ethereum.chainID")
+		c.ChainCfg, err = statediff.ChainConfig(chainID)
+	}
+	if err != nil {
+		return err
+	}
+
+	// setup a statediffing client
+	ethHTTP := viper.GetString("ethereum.httpPath")
+	if ethHTTP != "" {
+		ethHTTPEndpoint := fmt.Sprintf("http://%s", ethHTTP)
+		c.Client, err = rpc.Dial(ethHTTPEndpoint)
+	}
+
+	return err
+}
+
+func (c *Config) setupValidator() error {
+	var err error
+	c.BlockNum = viper.GetUint64("validate.blockHeight")
+	if c.BlockNum < 1 {
+		return fmt.Errorf("block height cannot be less the 1")
+	}
+
+	c.Trail = viper.GetUint64("validate.trail")
+	c.SleepInterval = viper.GetUint("validate.sleepInterval")
+	c.StateDiffMissingBlock = viper.GetBool("validate.stateDiffMissingBlock")
+	if c.StateDiffMissingBlock {
+		c.StateDiffTimeout = viper.GetUint("validate.stateDiffTimeout")
+	}
+
+	return err
 }

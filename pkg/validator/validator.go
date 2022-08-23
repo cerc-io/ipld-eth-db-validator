@@ -46,9 +46,9 @@ type service struct {
 	logger          *log.Logger
 	chainCfg        *params.ChainConfig
 
-	stateDiffOnMiss  bool
-	stateDiffTimeout uint
-	ethClient        *rpc.Client
+	stateDiffMissingBlock bool
+	stateDiffTimeout      uint
+	ethClient             *rpc.Client
 
 	quitChan     chan bool
 	progressChan chan uint64
@@ -56,17 +56,17 @@ type service struct {
 
 func NewService(cfg *Config, progressChan chan uint64) *service {
 	return &service{
-		db:               cfg.DB,
-		blockNum:         cfg.BlockNum,
-		trail:            cfg.Trail,
-		sleepInterval:    cfg.SleepInterval,
-		logger:           log.New(),
-		chainCfg:         cfg.ChainCfg,
-		stateDiffOnMiss:  cfg.StateDiffOnMiss,
-		stateDiffTimeout: cfg.StateDiffTimeout,
-		ethClient:        cfg.Client,
-		quitChan:         make(chan bool),
-		progressChan:     progressChan,
+		db:                    cfg.DB,
+		blockNum:              cfg.BlockNum,
+		trail:                 cfg.Trail,
+		sleepInterval:         cfg.SleepInterval,
+		logger:                log.New(),
+		chainCfg:              cfg.ChainCfg,
+		stateDiffMissingBlock: cfg.StateDiffMissingBlock,
+		stateDiffTimeout:      cfg.StateDiffTimeout,
+		ethClient:             cfg.Client,
+		quitChan:              make(chan bool),
+		progressChan:          progressChan,
 	}
 }
 
@@ -188,7 +188,7 @@ func (s *service) Validate(ctx context.Context, api *ipldEth.PublicEthAPI, idxBl
 
 // writeStateDiffAt calls out to a statediffing geth client to fill in a gap in the index
 func (s *service) writeStateDiffAt(height uint64) error {
-	if !s.stateDiffOnMiss {
+	if !s.stateDiffMissingBlock {
 		return nil
 	}
 
@@ -205,7 +205,7 @@ func (s *service) writeStateDiffAt(height uint64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s.stateDiffTimeout*uint(time.Second)))
 	defer cancel()
 
-	s.logger.Infof("making writeStateDiffAt call at height %d", height)
+	s.logger.Warnf("making writeStateDiffAt call at height %d", height)
 	if err := s.ethClient.CallContext(ctx, &data, "statediff_writeStateDiffAt", height, params); err != nil {
 		logrus.Errorf("writeStateDiffAt %d faild with err %s", height, err.Error())
 		return err

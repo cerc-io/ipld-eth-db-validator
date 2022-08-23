@@ -6,14 +6,15 @@
     user     = "vdbm"
 
 [validate]
-    block-height = 1
+    blockHeight = 1
     trail  = 16
     sleepInterval = 10
-    stateDiffOnMiss = true
-    stateDiffTimeout = 60
+    stateDiffMissingBlock = true
+    stateDiffTimeout = 240
 
 [ethereum]
-    chainConfig = "./chain.json"
+    chainConfig = ""
+    chainID = "1"
     httpPath = "localhost:8545"
 
 [prom]
@@ -22,3 +23,7 @@
     httpAddr = "localhost"
     httpPort = "9001"
     dbStats = true
+
+[log]
+    file = ""
+    level = "info"
