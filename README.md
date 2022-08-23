@@ -1,75 +1,124 @@
-- [Validator-README](#validator-readme)
-- [Overview](#overview)
-- [Intention for the Validator](#intention-for-the-validator)
-  - [Edge Cases](#edge-cases)
-- [Instructions for Testing](#instructions-for-testing)
-- [Code Overview](#code-overview)
-- [Known Bugs](#known-bugs)
-- [Tests on 03/03/22](#tests-on-03-03-22)
-  - [Set Up](#set-up)
-  - [Testing Failures](#testing-failures)
+# ipld-eth-db-validator
 
-<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+> `ipld-eth-db-validator` performs validation checks on indexed Ethereum IPLD objects in a Postgres database:
+> * Attempt to apply transactions in each block and validate resultant block hash
+> * Check referential integrity between IPLD blocks and index tables
 
-# Overview
+## Setup
 
-This repository contains the validator. The purpose of the validator is to ensure that the data in the Core Postgres database match the data on the blockchain.
+Build the binary:
 
-# Intention for the Validator
+```bash
+make build
+```
 
-The perfect scenario for the validator is as follows:
+## Configuration
 
-1. The validator will have the capacity to perform historical checks for the Core Postgres database. Users can contain these historical checks to specified configurations (block range).
-2. The validator will validate a certain number of trailing blocks, `t`, trailing the head, `n`. Therefore the validator will constantly perform real-time validation starting at `n` and ending at `n - t`.
-3. The validator validates the IPLD blocks in the Core Database; it will update the core database to indicate that the validator validated it.
+An example config file:
 
-## Edge Cases
+```toml
+[database]
+  # db credentials
+  name     = "vulcanize_public" # DATABASE_NAME
+  hostname = "localhost"        # DATABASE_HOSTNAME
+  port     = 5432               # DATABASE_PORT
+  user     = "vdbm"             # DATABASE_USER
+  password = "..."              # DATABASE_PASSWORD
 
-We must consider the following edge cases for the validator.
+[validate]
+  # block height to initiate database validation at
+  blockHeight = 1      # VALIDATE_BLOCK_HEIGHT  (default: 1)
+  # number of blocks to trail behind the head
+  trail  = 16         # VALIDATE_TRAIL  (default: 16)
+  # sleep interval after validator has caught up to (head-trail) height (in sec)
+  sleepInterval = 10  # VALIDATE_SLEEP_INTERVAL (default: 10)
 
-- There are three different data types that the validator must account for.
+  # whether to perform a statediffing call on a missing block
+  stateDiffMissingBlock = true # (default: false)
+  # statediffing call timeout period (in sec)
+  stateDiffTimeout = 240 # (default: 240)
 
-# Instructions for Testing
+[ethereum]
+  # node info
+  # path to json chain config (optional)
+  chainConfig = ""            # ETH_CHAIN_CONFIG
+  # eth chain id for config (overridden by chainConfig)
+  chainID = "1"               # ETH_CHAIN_ID (default: 1)
+  # http RPC endpoint URL for a statediffing node
+  httpPath = "localhost:8545" # ETH_HTTP_PATH
 
-Follow steps in [test/README.md](./test/README.md)
+[prom]
+  # prometheus metrics
+  metrics = true        # PROM_METRICS    (default: false)
+  http = true           # PROM_HTTP       (default: false)
+  httpAddr = "0.0.0.0"  # PROM_HTTP_ADDR  (default: 127.0.0.1)
+  httpPort = "9001"     # PROM_HTTP_PORT  (default: 9001)
+  dbStats = true        # PROM_DB_STATS   (default: false)
 
-# Code Overview
+[log]
+  # log level (trace, debug, info, warn, error, fatal, panic)
+  level = "info"  # LOG_LEVEL (default: info)
+  # file path for logging, leave unset to log to stdout
+  file  = ""      # LOG_FILE_PATH
+```
 
-This section will provide some insight into specific files and their purpose.
 
-- `validator_test/chain_maker.go` - This file contains the code for creating a “test” blockchain.
-- `validator_test/validator_test.go` - This file contains testing to validate the validator. It leverages `chain_maker.go` to create a blockchain to validate.
-- `pkg/validator/validator.go` - This file contains most of the core logic for the validator.
+* The validation process trails behind the latest block number in the database by config parameter `validate.trail`.
 
-# Known Bugs
+* If the validator has caught up to (head-trail) height, it waits for a configured time interval (`validate.sleepInterval`) before again querying the database.
 
-1. The validator is improperly handling missing headers from the database.
-   1. Scenario
-      1. The IPLD blocks from the mock blockchain are inserted into the Postgres Data.
-      2. The validator runs, and all tests pass.
-      3. Users manually remove the last few rows from the database.
-      4. The validator runs, and all tests pass - This behavior is neither expected nor wanted.
+* If the validator encounters a missing block (gap) in the database, it makes a `writeStateDiffAt` call to the configured statediffing endpoint (`ethereum.httpPath`) if `validate.stateDiffMissingBlock` is set to `true`. Here it is assumed that the statediffing node pointed to is writing out to the database.
 
-# Tests on 03/03/22
+### Local Setup
 
-The tests highlighted below were conducted to validate the initial behavior of the validator.
+* Create a chain config file `chain.json` according to chain config in genesis json file used by local geth.
 
-## Set Up
+  Example:
 
-Below are the steps utilized to set up the test environment.
+  ```json
+  {
+    "chainId": 41337,
+    "homesteadBlock": 0,
+    "eip150Block": 0,
+    "eip150Hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "eip155Block": 0,
+    "eip158Block": 0,
+    "byzantiumBlock": 0,
+    "constantinopleBlock": 0,
+    "petersburgBlock": 0,
+    "istanbulBlock": 0,
+    "clique": {
+      "period": 5,
+      "epoch": 30000
+    }
+  }
+  ```
 
-1. Run the `scripts/run_integration_test.sh` script.
-   1. First comment outline 130 to 133 from `validator_test/validator_test.go`
-2. Once the code has completed running, comment out lines 55 to 126, 38 to 40, and 42 to 44.
-   1. Make the following change `db, err = setupDB() --> db, _ = setupDB()`
-3. Run the following command: `ginkgo -r validator_test/ -v`
-   1. All tests should pass
+  Provide the path to the above file in the config.
 
-## Testing Failures
+## Usage
 
-Once we had populated the database, we tested for failures.
+* Create / update the config file (refer to example config above).
 
-1. Removing a Transaction from `transaction_cids` - If we removed a transaction from the database and ran the test, the test would fail. **This is the expected behavior.**
-2. Removing Headers from `eth.header_cids`
-   1. If we removed a header block sandwiched between two header blocks, the test would fail (For example, we removed the entry for block 4, and the block range is 1-10). **This is the expected behavior.**
-   2. If we removed the tail block(s) from the table, the test would pass (For example, we remove the entry for blocks 8, 9, 10, and the block range is 1-10). **This is _not_ the expected behavior.**
+* Run validator:
+
+  ```bash
+  ./ipld-eth-db-validator stateValidator --config=<config path>
+  ```
+
+  Example:
+
+  ```bash
+  ./ipld-eth-db-validator stateValidator --config=environments/example.toml
+  ```
+
+## Monitoring
+
+* Enable metrics using config parameters `prom.metrics` and `prom.http`.
+* `ipld-eth-db-validator` exposes following prometheus metrics at `/metrics` endpoint:
+  * `last_validated_block`: Last validated block number.
+  * DB stats if `prom.dbStats` set to `true`.
+
+## Tests
+
+* Follow [Test Instructions](./test/README.md) to run unit and integration tests locally.

@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 	sdtypes "github.com/ethereum/go-ethereum/statediff/types"
 	"github.com/jmoiron/sqlx"
@@ -118,7 +119,11 @@ var _ = Describe("eth state reading tests", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			for i := uint64(blockHeight); i <= chainLength-trail; i++ {
-				err = validator.ValidateBlock(context.Background(), api, i)
+				blockToBeValidated, err := api.B.BlockByNumber(context.Background(), rpc.BlockNumber(i))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(blockToBeValidated).ToNot(BeNil())
+
+				err = validator.ValidateBlock(blockToBeValidated, api.B, i)
 				Expect(err).ToNot(HaveOccurred())
 
 				err = validator.ValidateReferentialIntegrity(db, i)

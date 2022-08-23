@@ -14,10 +14,34 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package main
+package prom
 
-import "github.com/vulcanize/ipld-eth-db-validator/cmd"
+import (
+	"errors"
+	"net/http"
 
-func main() {
-	cmd.Execute()
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sirupsen/logrus"
+)
+
+var errPromHTTP = errors.New("can't start http server for prometheus")
+
+// Serve start listening http
+func Serve(addr string) *http.Server {
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.Handler())
+	srv := http.Server{
+		Addr:    addr,
+		Handler: mux,
+	}
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			logrus.
+				WithError(err).
+				WithField("module", "prom").
+				WithField("addr", addr).
+				Fatal(errPromHTTP)
+		}
+	}()
+	return &srv
 }

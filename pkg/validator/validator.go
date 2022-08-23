@@ -1,7 +1,24 @@
+// VulcanizeDB
+// Copyright © 2022 Vulcanize
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package validator
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
@@ -18,12 +35,15 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
 	ipfsethdb "github.com/vulcanize/ipfs-ethdb/v4/postgres"
 	ipldEth "github.com/vulcanize/ipld-eth-server/v4/pkg/eth"
 	ethServerShared "github.com/vulcanize/ipld-eth-server/v4/pkg/shared"
+
+	"github.com/vulcanize/ipld-eth-db-validator/pkg/prom"
 )
 
 var (
@@ -38,22 +58,28 @@ type service struct {
 	db              *sqlx.DB
 	blockNum, trail uint64
 	sleepInterval   uint
-	logger          *log.Logger
 	chainCfg        *params.ChainConfig
-	quitChan        chan bool
-	progressChan    chan uint64
+
+	stateDiffMissingBlock bool
+	stateDiffTimeout      uint
+	ethClient             *rpc.Client
+
+	quitChan     chan bool
+	progressChan chan uint64
 }
 
 func NewService(cfg *Config, progressChan chan uint64) *service {
 	return &service{
-		db:            cfg.DB,
-		blockNum:      cfg.BlockNum,
-		trail:         cfg.Trail,
-		sleepInterval: cfg.SleepInterval,
-		logger:        log.New(),
-		chainCfg:      cfg.ChainCfg,
-		quitChan:      make(chan bool),
-		progressChan:  progressChan,
+		db:                    cfg.DB,
+		blockNum:              cfg.BlockNum,
+		trail:                 cfg.Trail,
+		sleepInterval:         cfg.SleepInterval,
+		chainCfg:              cfg.ChainCfg,
+		stateDiffMissingBlock: cfg.StateDiffMissingBlock,
+		stateDiffTimeout:      cfg.StateDiffTimeout,
+		ethClient:             cfg.Client,
+		quitChan:              make(chan bool),
+		progressChan:          progressChan,
 	}
 }
 
@@ -92,7 +118,7 @@ func (s *service) Start(ctx context.Context, wg *sync.WaitGroup) {
 
 	api, err := EthAPI(ctx, s.db, s.chainCfg)
 	if err != nil {
-		s.logger.Fatal(err)
+		log.Fatal(err)
 		return
 	}
 
@@ -101,7 +127,7 @@ func (s *service) Start(ctx context.Context, wg *sync.WaitGroup) {
 	for {
 		select {
 		case <-s.quitChan:
-			s.logger.Infof("last validated block %v", idxBlockNum-1)
+			log.Infof("last validated block %v", idxBlockNum-1)
 			if s.progressChan != nil {
 				close(s.progressChan)
 			}
@@ -109,17 +135,19 @@ func (s *service) Start(ctx context.Context, wg *sync.WaitGroup) {
 		default:
 			idxBlockNum, err = s.Validate(ctx, api, idxBlockNum)
 			if err != nil {
-				s.logger.Infof("last validated block %v", idxBlockNum-1)
-				s.logger.Fatal(err)
+				log.Infof("last validated block %v", idxBlockNum-1)
+				log.Fatal(err)
 				return
 			}
+
+			prom.SetLastValidatedBlock(float64(idxBlockNum))
 		}
 	}
 }
 
 // Stop is used to gracefully stop the service
 func (s *service) Stop() {
-	s.logger.Info("stopping ipld-eth-db-validator process")
+	log.Info("stopping ipld-eth-db-validator process")
 	close(s.quitChan)
 }
 
@@ -131,20 +159,32 @@ func (s *service) Validate(ctx context.Context, api *ipldEth.PublicEthAPI, idxBl
 
 	// Check if it block at height idxBlockNum can be validated
 	if idxBlockNum <= headBlockNum-s.trail {
-		err = ValidateBlock(ctx, api, idxBlockNum)
+		blockToBeValidated, err := api.B.BlockByNumber(ctx, rpc.BlockNumber(idxBlockNum))
 		if err != nil {
-			s.logger.Errorf("failed to verify state root at block %d", idxBlockNum)
+			log.Errorf("failed to fetch block at height %d", idxBlockNum)
 			return idxBlockNum, err
 		}
 
-		s.logger.Infof("state root verified for block %d", idxBlockNum)
+		// Make a writeStateDiffAt call if block not found in the db
+		if blockToBeValidated == nil {
+			err = s.writeStateDiffAt(idxBlockNum)
+			return idxBlockNum, err
+		}
+
+		err = ValidateBlock(blockToBeValidated, api.B, idxBlockNum)
+		if err != nil {
+			log.Errorf("failed to verify state root at block %d", idxBlockNum)
+			return idxBlockNum, err
+		}
+
+		log.Infof("state root verified for block %d", idxBlockNum)
 
 		err = ValidateReferentialIntegrity(s.db, idxBlockNum)
 		if err != nil {
-			s.logger.Errorf("failed to verify referential integrity at block %d", idxBlockNum)
+			log.Errorf("failed to verify referential integrity at block %d", idxBlockNum)
 			return idxBlockNum, err
 		}
-		s.logger.Infof("referential integrity verified for block %d", idxBlockNum)
+		log.Infof("referential integrity verified for block %d", idxBlockNum)
 
 		if s.progressChan != nil {
 			s.progressChan <- idxBlockNum
@@ -159,14 +199,37 @@ func (s *service) Validate(ctx context.Context, api *ipldEth.PublicEthAPI, idxBl
 	return idxBlockNum, nil
 }
 
-// ValidateBlock validates block at the given height
-func ValidateBlock(ctx context.Context, api *ipldEth.PublicEthAPI, blockNumber uint64) error {
-	blockToBeValidated, err := api.B.BlockByNumber(ctx, rpc.BlockNumber(blockNumber))
-	if err != nil {
+// writeStateDiffAt calls out to a statediffing geth client to fill in a gap in the index
+func (s *service) writeStateDiffAt(height uint64) error {
+	if !s.stateDiffMissingBlock {
+		return nil
+	}
+
+	var data json.RawMessage
+	params := statediff.Params{
+		IntermediateStateNodes:   true,
+		IntermediateStorageNodes: true,
+		IncludeBlock:             true,
+		IncludeReceipts:          true,
+		IncludeTD:                true,
+		IncludeCode:              true,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s.stateDiffTimeout*uint(time.Second)))
+	defer cancel()
+
+	log.Warnf("making writeStateDiffAt call at height %d", height)
+	if err := s.ethClient.CallContext(ctx, &data, "statediff_writeStateDiffAt", height, params); err != nil {
+		log.Errorf("writeStateDiffAt %d faild with err %s", height, err.Error())
 		return err
 	}
 
-	stateDB, err := applyTransaction(blockToBeValidated, api.B)
+	return nil
+}
+
+// ValidateBlock validates block at the given height
+func ValidateBlock(blockToBeValidated *types.Block, b *ipldEth.Backend, blockNumber uint64) error {
+	stateDB, err := applyTransaction(blockToBeValidated, b)
 	if err != nil {
 		return err
 	}

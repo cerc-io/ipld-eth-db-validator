@@ -1,3 +1,19 @@
+// VulcanizeDB
+// Copyright © 2022 Vulcanize
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package cmd
 
 import (
@@ -52,14 +68,22 @@ func init() {
 	stateValidatorCmd.PersistentFlags().String("block-height", "1", "block height to initiate state validation")
 	stateValidatorCmd.PersistentFlags().String("trail", "16", "trail of block height to validate")
 	stateValidatorCmd.PersistentFlags().String("sleep-interval", "10", "sleep interval in seconds after validator has caught up to (head-trail) height")
+	stateValidatorCmd.PersistentFlags().Bool("statediff-missing-block", false, "whether to perform a statediffing call on a missing block")
+	stateValidatorCmd.PersistentFlags().Uint("statediff-timeout", 240, "statediffing call timeout period (in sec)")
 
-	stateValidatorCmd.PersistentFlags().String("chain-config", "", "path to chain config")
+	stateValidatorCmd.PersistentFlags().String("eth-chain-config", "", "path to json chain config")
+	stateValidatorCmd.PersistentFlags().String("eth-chain-id", "1", "eth chain id")
+	stateValidatorCmd.PersistentFlags().String("eth-http-path", "", "http url for a statediffing node")
 
-	_ = viper.BindPFlag("validate.block-height", stateValidatorCmd.PersistentFlags().Lookup("block-height"))
+	_ = viper.BindPFlag("validate.blockHeight", stateValidatorCmd.PersistentFlags().Lookup("block-height"))
 	_ = viper.BindPFlag("validate.trail", stateValidatorCmd.PersistentFlags().Lookup("trail"))
 	_ = viper.BindPFlag("validate.sleepInterval", stateValidatorCmd.PersistentFlags().Lookup("sleep-interval"))
+	_ = viper.BindPFlag("validate.stateDiffMissingBlock", stateValidatorCmd.PersistentFlags().Lookup("statediff-missing-block"))
+	_ = viper.BindPFlag("validate.stateDiffTimeout", stateValidatorCmd.PersistentFlags().Lookup("statediff-timeout"))
 
-	_ = viper.BindPFlag("ethereum.chainConfig", stateValidatorCmd.PersistentFlags().Lookup("chain-config"))
+	_ = viper.BindPFlag("ethereum.chainConfig", stateValidatorCmd.PersistentFlags().Lookup("eth-chain-config"))
+	_ = viper.BindPFlag("ethereum.chainID", stateValidatorCmd.PersistentFlags().Lookup("eth-chain-id"))
+	_ = viper.BindPFlag("ethereum.httpPath", stateValidatorCmd.PersistentFlags().Lookup("eth-http-path"))
 }
 
 func initConfig() {
