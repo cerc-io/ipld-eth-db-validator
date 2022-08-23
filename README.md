@@ -1,7 +1,7 @@
 # ipld-eth-db-validator
 
 > `ipld-eth-db-validator` performs validation checks on indexed Ethereum IPLD objects in a Postgres database:
-> * Attempt to apply transactions in each block and validate generated block hash
+> * Attempt to apply transactions in each block and validate resultant block hash
 > * Check referential integrity between IPLD blocks and index tables
 
 ## Setup
@@ -67,7 +67,7 @@ An example config file:
 
 * If the validator has caught up to (head-trail) height, it waits for a configured time interval (`validate.sleepInterval`) before again querying the database.
 
-* If the validator encounters a missing block (gap) in the database, it makes a `writeStateDiffAt` call to configured statediffing endpoint (`ethereum.httpPath`) if `validate.stateDiffMissingBlock` is set to `true`. Here it is assumed that the statediffing node pointed to is writing out to the database.
+* If the validator encounters a missing block (gap) in the database, it makes a `writeStateDiffAt` call to the configured statediffing endpoint (`ethereum.httpPath`) if `validate.stateDiffMissingBlock` is set to `true`. Here it is assumed that the statediffing node pointed to is writing out to the database.
 
 ### Local Setup
 

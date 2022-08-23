@@ -21,7 +21,6 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/jmoiron/sqlx"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 
 	ipfsethdb "github.com/vulcanize/ipfs-ethdb/v4/postgres"
@@ -43,7 +42,6 @@ type service struct {
 	db              *sqlx.DB
 	blockNum, trail uint64
 	sleepInterval   uint
-	logger          *log.Logger
 	chainCfg        *params.ChainConfig
 
 	stateDiffMissingBlock bool
@@ -60,7 +58,6 @@ func NewService(cfg *Config, progressChan chan uint64) *service {
 		blockNum:              cfg.BlockNum,
 		trail:                 cfg.Trail,
 		sleepInterval:         cfg.SleepInterval,
-		logger:                log.New(),
 		chainCfg:              cfg.ChainCfg,
 		stateDiffMissingBlock: cfg.StateDiffMissingBlock,
 		stateDiffTimeout:      cfg.StateDiffTimeout,
@@ -105,7 +102,7 @@ func (s *service) Start(ctx context.Context, wg *sync.WaitGroup) {
 
 	api, err := EthAPI(ctx, s.db, s.chainCfg)
 	if err != nil {
-		s.logger.Fatal(err)
+		log.Fatal(err)
 		return
 	}
 
@@ -114,7 +111,7 @@ func (s *service) Start(ctx context.Context, wg *sync.WaitGroup) {
 	for {
 		select {
 		case <-s.quitChan:
-			s.logger.Infof("last validated block %v", idxBlockNum-1)
+			log.Infof("last validated block %v", idxBlockNum-1)
 			if s.progressChan != nil {
 				close(s.progressChan)
 			}
@@ -122,8 +119,8 @@ func (s *service) Start(ctx context.Context, wg *sync.WaitGroup) {
 		default:
 			idxBlockNum, err = s.Validate(ctx, api, idxBlockNum)
 			if err != nil {
-				s.logger.Infof("last validated block %v", idxBlockNum-1)
-				s.logger.Fatal(err)
+				log.Infof("last validated block %v", idxBlockNum-1)
+				log.Fatal(err)
 				return
 			}
 
@@ -134,7 +131,7 @@ func (s *service) Start(ctx context.Context, wg *sync.WaitGroup) {
 
 // Stop is used to gracefully stop the service
 func (s *service) Stop() {
-	s.logger.Info("stopping ipld-eth-db-validator process")
+	log.Info("stopping ipld-eth-db-validator process")
 	close(s.quitChan)
 }
 
@@ -148,7 +145,7 @@ func (s *service) Validate(ctx context.Context, api *ipldEth.PublicEthAPI, idxBl
 	if idxBlockNum <= headBlockNum-s.trail {
 		blockToBeValidated, err := api.B.BlockByNumber(ctx, rpc.BlockNumber(idxBlockNum))
 		if err != nil {
-			s.logger.Errorf("failed to fetch block at height %d", idxBlockNum)
+			log.Errorf("failed to fetch block at height %d", idxBlockNum)
 			return idxBlockNum, err
 		}
 
@@ -160,18 +157,18 @@ func (s *service) Validate(ctx context.Context, api *ipldEth.PublicEthAPI, idxBl
 
 		err = ValidateBlock(blockToBeValidated, api.B, idxBlockNum)
 		if err != nil {
-			s.logger.Errorf("failed to verify state root at block %d", idxBlockNum)
+			log.Errorf("failed to verify state root at block %d", idxBlockNum)
 			return idxBlockNum, err
 		}
 
-		s.logger.Infof("state root verified for block %d", idxBlockNum)
+		log.Infof("state root verified for block %d", idxBlockNum)
 
 		err = ValidateReferentialIntegrity(s.db, idxBlockNum)
 		if err != nil {
-			s.logger.Errorf("failed to verify referential integrity at block %d", idxBlockNum)
+			log.Errorf("failed to verify referential integrity at block %d", idxBlockNum)
 			return idxBlockNum, err
 		}
-		s.logger.Infof("referential integrity verified for block %d", idxBlockNum)
+		log.Infof("referential integrity verified for block %d", idxBlockNum)
 
 		if s.progressChan != nil {
 			s.progressChan <- idxBlockNum
@@ -205,9 +202,9 @@ func (s *service) writeStateDiffAt(height uint64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s.stateDiffTimeout*uint(time.Second)))
 	defer cancel()
 
-	s.logger.Warnf("making writeStateDiffAt call at height %d", height)
+	log.Warnf("making writeStateDiffAt call at height %d", height)
 	if err := s.ethClient.CallContext(ctx, &data, "statediff_writeStateDiffAt", height, params); err != nil {
-		logrus.Errorf("writeStateDiffAt %d faild with err %s", height, err.Error())
+		log.Errorf("writeStateDiffAt %d faild with err %s", height, err.Error())
 		return err
 	}
 
