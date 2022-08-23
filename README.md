@@ -116,8 +116,8 @@ An example config file:
 
 * Enable metrics using config parameters `prom.metrics` and `prom.http`.
 * `ipld-eth-db-validator` exposes following prometheus metrics at `/metrics` endpoint:
-  * last_validated_block: Last validated block number.
-  * DB `prom.stats` if dbStats set to `true`.
+  * `last_validated_block`: Last validated block number.
+  * DB stats if `prom.dbStats` set to `true`.
 
 ## Tests
 
