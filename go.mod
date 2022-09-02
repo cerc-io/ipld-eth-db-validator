@@ -3,7 +3,7 @@ module github.com/vulcanize/ipld-eth-db-validator
 go 1.18
 
 require (
-	github.com/ethereum/go-ethereum v1.10.21
+	github.com/ethereum/go-ethereum v1.10.23
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.19.0
@@ -11,8 +11,8 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.11.0
-	github.com/vulcanize/ipfs-ethdb/v4 v4.0.6-alpha
-	github.com/vulcanize/ipld-eth-server/v4 v4.1.5-alpha
+	github.com/vulcanize/ipfs-ethdb/v4 v4.0.7-alpha
+	github.com/vulcanize/ipld-eth-server/v4 v4.1.7-alpha
 )
 
 require (
@@ -237,7 +237,8 @@ require (
 	github.com/tklauser/numcpus v0.2.2 // indirect
 	github.com/tyler-smith/go-bip39 v1.0.1-0.20181017060643-dbb3b84ba2ef // indirect
 	github.com/urfave/cli/v2 v2.10.2 // indirect
-	github.com/vulcanize/eth-ipfs-state-validator/v4 v4.0.6-alpha // indirect
+	github.com/vulcanize/eth-ipfs-state-validator/v4 v4.0.7-alpha // indirect
+	github.com/vulcanize/go-eth-state-node-iterator v1.1.4 // indirect
 	github.com/wI2L/jsondiff v0.2.0 // indirect
 	github.com/whyrusleeping/base32 v0.0.0-20170828182744-c30ac30633cc // indirect
 	github.com/whyrusleeping/cbor-gen v0.0.0-20210219115102-f37d292932f2 // indirect
@@ -256,7 +257,7 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.21.0 // indirect
 	go4.org v0.0.0-20200411211856-f5505b9728dd // indirect
-	golang.org/x/crypto v0.0.0-20220817201139-bc19a97f63c8 // indirect
+	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
 	golang.org/x/net v0.0.0-20220607020251-c690dde0001d // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
@@ -276,4 +277,4 @@ require (
 	lukechampine.com/blake3 v1.1.7 // indirect
 )
 
-replace github.com/ethereum/go-ethereum v1.10.21 => github.com/vulcanize/go-ethereum v1.10.21-statediff-4.1.2-alpha
+replace github.com/ethereum/go-ethereum v1.10.23 => github.com/vulcanize/go-ethereum v1.10.23-statediff-4.2.0-alpha
