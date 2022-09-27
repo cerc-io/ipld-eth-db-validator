@@ -11,8 +11,8 @@ import (
 	"github.com/vulcanize/ipld-eth-db-validator/pkg/validator"
 	integration "github.com/vulcanize/ipld-eth-db-validator/test"
 
-	"github.com/vulcanize/ipld-eth-server/v4/pkg/shared"
-	ethServerIntegration "github.com/vulcanize/ipld-eth-server/v4/test"
+	"github.com/cerc-io/ipld-eth-server/v4/pkg/shared"
+	ethServerIntegration "github.com/cerc-io/ipld-eth-server/v4/test"
 )
 
 const (

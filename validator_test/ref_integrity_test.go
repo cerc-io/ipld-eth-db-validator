@@ -11,9 +11,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/cerc-io/ipld-eth-server/v4/pkg/eth/test_helpers"
+	"github.com/cerc-io/ipld-eth-server/v4/pkg/shared"
 	"github.com/vulcanize/ipld-eth-db-validator/pkg/validator"
-	"github.com/vulcanize/ipld-eth-server/v4/pkg/eth/test_helpers"
-	"github.com/vulcanize/ipld-eth-server/v4/pkg/shared"
 )
 
 var _ = Describe("RefIntegrity", func() {

@@ -21,14 +21,13 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/cerc-io/ipld-eth-server/v4/pkg/shared"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/ethereum/go-ethereum/statediff/indexer/database/sql/postgres"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
-	"github.com/vulcanize/ipld-eth-server/v4/pkg/shared"
-
 	"github.com/vulcanize/ipld-eth-db-validator/pkg/prom"
 )
 
