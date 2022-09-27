@@ -39,9 +39,9 @@ import (
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
-	ipfsethdb "github.com/vulcanize/ipfs-ethdb/v4/postgres"
-	ipldEth "github.com/vulcanize/ipld-eth-server/v4/pkg/eth"
-	ethServerShared "github.com/vulcanize/ipld-eth-server/v4/pkg/shared"
+	ipfsethdb "github.com/cerc-io/ipfs-ethdb/v4/postgres"
+	ipldEth "github.com/cerc-io/ipld-eth-server/v4/pkg/eth"
+	ethServerShared "github.com/cerc-io/ipld-eth-server/v4/pkg/shared"
 
 	"github.com/vulcanize/ipld-eth-db-validator/pkg/prom"
 )
