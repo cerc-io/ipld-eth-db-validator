@@ -13,7 +13,7 @@ import (
 
 	"github.com/cerc-io/ipld-eth-server/v4/pkg/eth/test_helpers"
 	"github.com/cerc-io/ipld-eth-server/v4/pkg/shared"
-	"github.com/vulcanize/ipld-eth-db-validator/pkg/validator"
+	"github.com/cerc-io/ipld-eth-db-validator/pkg/validator"
 )
 
 var _ = Describe("RefIntegrity", func() {

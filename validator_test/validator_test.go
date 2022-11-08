@@ -16,8 +16,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/ipld-eth-db-validator/pkg/validator"
-	"github.com/vulcanize/ipld-eth-db-validator/validator_test"
+	"github.com/cerc-io/ipld-eth-db-validator/pkg/validator"
+	"github.com/cerc-io/ipld-eth-db-validator/validator_test"
 )
 
 const (

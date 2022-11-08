@@ -8,8 +8,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/ipld-eth-db-validator/pkg/validator"
-	integration "github.com/vulcanize/ipld-eth-db-validator/test"
+	"github.com/cerc-io/ipld-eth-db-validator/pkg/validator"
+	integration "github.com/cerc-io/ipld-eth-db-validator/test"
 
 	"github.com/cerc-io/ipld-eth-server/v4/pkg/shared"
 	ethServerIntegration "github.com/cerc-io/ipld-eth-server/v4/test"
