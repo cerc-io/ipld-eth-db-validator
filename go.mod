@@ -1,11 +1,11 @@
-module github.com/vulcanize/ipld-eth-db-validator
+module github.com/cerc-io/ipld-eth-db-validator
 
 go 1.18
 
 require (
-	github.com/cerc-io/ipfs-ethdb/v4 v4.0.9-alpha
-	github.com/cerc-io/ipld-eth-server/v4 v4.1.9-alpha
-	github.com/ethereum/go-ethereum v1.10.25
+	github.com/cerc-io/ipfs-ethdb/v4 v4.0.10-alpha
+	github.com/cerc-io/ipld-eth-server/v4 v4.2.2-alpha
+	github.com/ethereum/go-ethereum v1.10.26
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.19.0
@@ -28,8 +28,8 @@ require (
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
-	github.com/cerc-io/eth-ipfs-state-validator/v4 v4.0.9-alpha // indirect
-	github.com/cerc-io/go-eth-state-node-iterator v1.1.8 // indirect
+	github.com/cerc-io/eth-ipfs-state-validator/v4 v4.0.10-alpha // indirect
+	github.com/cerc-io/go-eth-state-node-iterator v1.1.9 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/cheekybits/genny v1.0.0 // indirect
 	github.com/containerd/cgroups v1.0.3 // indirect
@@ -277,4 +277,4 @@ require (
 	lukechampine.com/blake3 v1.1.7 // indirect
 )
 
-replace github.com/ethereum/go-ethereum v1.10.25 => github.com/cerc-io/go-ethereum v1.10.25-statediff-4.2.1-alpha
+replace github.com/ethereum/go-ethereum v1.10.26 => github.com/cerc-io/go-ethereum v1.10.26-statediff-4.2.2-alpha

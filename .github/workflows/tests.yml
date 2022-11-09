@@ -4,8 +4,8 @@ on:
 
 env:
   STACK_ORCHESTRATOR_REF: "f2fd766f5400fcb9eb47b50675d2e3b1f2753702"
-  GO_ETHEREUM_REF: "v1.10.25-statediff-4.2.1-alpha" # Use the tag, we are going to download the bin not build it.
-  IPLD_ETH_DB_REF: "d4d704616ba0f87733853c78787bf54c9868d2ac"
+  GO_ETHEREUM_REF: "v1.10.26-statediff-4.2.2-alpha" # Use the tag, we are going to download the bin not build it.
+  IPLD_ETH_DB_REF: "a4961e5e597148c0ff6dd7a34958bdf8c469a47e"
 
 jobs:
   integrationtest:
@@ -77,14 +77,12 @@ jobs:
         with:
           go-version: "1.18.0"
           check-latest: true
-
       - name: Checkout code
         uses: actions/checkout@v2
-
+        
       - name: Spin up database
         run: |
           docker-compose up -d
-
       - name: Run unit tests
         run: |
           sleep 30
