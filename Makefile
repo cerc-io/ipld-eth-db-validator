@@ -1,21 +1,26 @@
-BIN = $(GOPATH)/bin
-BASE = $(GOPATH)/src/$(PACKAGE)
-PKGS = go list ./... | grep -v "^vendor/"
+CONTRACTS_DIR := ./test/contract/contracts
+CONTRACTS_OUTPUT_DIR := ./fixture/build
 
-# Tools
+GINKGO := go run github.com/onsi/ginkgo/v2/ginkgo
 
-.PHONY: integrationtest
-integrationtest: | $(GOOSE)
-	go vet ./...
-	go fmt ./...
-	go run github.com/onsi/ginkgo/ginkgo -r test/ -v
+.PHONY: contracts
+contracts: $(CONTRACTS_OUTPUT_DIR)/Test.bin $(CONTRACTS_OUTPUT_DIR)/Test.abi
+
+$(CONTRACTS_OUTPUT_DIR)/%.bin $(CONTRACTS_OUTPUT_DIR)/%.abi: $(CONTRACTS_DIR)/%.sol
+	solc --abi --bin -o $(CONTRACTS_OUTPUT_DIR) --overwrite $<
+
+clean:
+	rm $(CONTRACTS_OUTPUT_DIR)/*.bin $(CONTRACTS_OUTPUT_DIR)/*.abi
+
+.PHONY: integration-test
+integration-test:
+	$(GINKGO) -r ./integration -v
 
 .PHONY: test
-test: | $(GOOSE)
-	go vet ./...
-	go fmt ./...
-	go run github.com/onsi/ginkgo/ginkgo -r validator_test/ -v
+test:
+	# go generate
+	$(GINKGO) -r ./validator_test -v
 
-build:
-	go fmt ./...
-	GO111MODULE=on go build
+# build:
+# 	go fmt ./...
+# 	GO111MODULE=on go build

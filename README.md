@@ -19,19 +19,19 @@ An example config file:
 ```toml
 [database]
   # db credentials
-  name     = "vulcanize_public" # DATABASE_NAME
-  hostname = "localhost"        # DATABASE_HOSTNAME
-  port     = 5432               # DATABASE_PORT
-  user     = "vdbm"             # DATABASE_USER
-  password = "..."              # DATABASE_PASSWORD
+  name     = "cerc_public" # DATABASE_NAME
+  hostname = "localhost"   # DATABASE_HOSTNAME
+  port     = 5432          # DATABASE_PORT
+  user     = "vdbm"        # DATABASE_USER
+  password = "..."         # DATABASE_PASSWORD
 
 [validate]
   # block height to initiate database validation at
-  blockHeight = 1      # VALIDATE_BLOCK_HEIGHT  (default: 1)
+  fromHeight = 1      # VALIDATE_FROM_HEIGHT  (default: 1)
   # number of blocks to trail behind the head
   trail  = 16         # VALIDATE_TRAIL  (default: 16)
-  # sleep interval after validator has caught up to (head-trail) height (in sec)
-  sleepInterval = 10  # VALIDATE_SLEEP_INTERVAL (default: 10)
+  # retry interval after validator has caught up to (head-trail) height (in sec)
+  retryInterval = 10  # VALIDATE_RETRY_INTERVAL (default: 10)
 
   # whether to perform a statediffing call on a missing block
   stateDiffMissingBlock = true # (default: false)
@@ -65,7 +65,7 @@ An example config file:
 
 * The validation process trails behind the latest block number in the database by config parameter `validate.trail`.
 
-* If the validator has caught up to (head-trail) height, it waits for a configured time interval (`validate.sleepInterval`) before again querying the database.
+* If the validator has caught up to (head-trail) height, it waits for a configured time interval (`validate.retryInterval`) before again querying the database.
 
 * If the validator encounters a missing block (gap) in the database, it makes a `writeStateDiffAt` call to the configured statediffing endpoint (`ethereum.httpPath`) if `validate.stateDiffMissingBlock` is set to `true`. Here it is assumed that the statediffing node pointed to is writing out to the database.
 

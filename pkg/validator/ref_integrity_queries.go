@@ -26,7 +26,7 @@ const (
 	CIDsRefIPLDBlocks = `SELECT EXISTS (
 						SELECT *
 						FROM %[1]s
-						LEFT JOIN public.blocks ON (
+						LEFT JOIN ipld.blocks ON (
 							%[1]s.%[2]s = blocks.key
 							AND %[1]s.block_number = blocks.block_number
 						)
@@ -88,38 +88,13 @@ const (
 						SELECT *
 						FROM eth.storage_cids
 						LEFT JOIN eth.state_cids ON (
-							storage_cids.state_path = state_cids.state_path
+							storage_cids.state_leaf_key = state_cids.state_leaf_key
 							AND storage_cids.header_id = state_cids.header_id
 							AND storage_cids.block_number = state_cids.block_number
 						)
 						WHERE
 							storage_cids.block_number = $1
-							AND state_cids.state_path IS NULL
-					)`
-
-	StateAccountsRefStateCIDs = `SELECT EXISTS (
-						SELECT *
-						FROM eth.state_accounts
-						LEFT JOIN eth.state_cids ON (
-							state_accounts.state_path = state_cids.state_path
-							AND state_accounts.header_id = state_cids.header_id
-							AND state_accounts.block_number = state_cids.block_number
-						)
-						WHERE
-							state_accounts.block_number = $1
-							AND state_cids.state_path IS NULL
-					)`
-
-	AccessListElementsRefTransactionCIDs = `SELECT EXISTS (
-						SELECT *
-						FROM eth.access_list_elements
-						LEFT JOIN eth.transaction_cids ON (
-							access_list_elements.tx_id = transaction_cids.tx_hash
-							AND access_list_elements.block_number = transaction_cids.block_number
-						)
-						WHERE
-							access_list_elements.block_number = $1
-							AND transaction_cids.tx_hash IS NULL
+							AND state_cids.state_leaf_key IS NULL
 					)`
 
 	LogCIDsRefReceiptCIDs = `SELECT EXISTS (

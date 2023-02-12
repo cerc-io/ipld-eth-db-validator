@@ -1,134 +1,107 @@
-package validator_test_test
+package validator_test
 
 import (
 	"context"
 	"math/big"
 
-	"github.com/cerc-io/ipld-eth-server/v4/pkg/eth/test_helpers"
-	"github.com/cerc-io/ipld-eth-server/v4/pkg/shared"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ethereum/go-ethereum/statediff"
-	sdtypes "github.com/ethereum/go-ethereum/statediff/types"
 	"github.com/jmoiron/sqlx"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cerc-io/ipld-eth-db-validator/pkg/validator"
-	"github.com/cerc-io/ipld-eth-db-validator/validator_test"
+	// import server helpers for non-canonical chain data
+	server_mocks "github.com/cerc-io/ipld-eth-server/v5/pkg/eth/test_helpers"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/statediff/indexer/ipld"
+	sdtypes "github.com/ethereum/go-ethereum/statediff/types"
+
+	"github.com/cerc-io/ipld-eth-db-validator/v5/pkg/validator"
+	"github.com/cerc-io/ipld-eth-db-validator/v5/test/chaingen"
+	"github.com/cerc-io/ipld-eth-db-validator/v5/test/helpers"
 )
 
 const (
-	chainLength = 20
-	blockHeight = 1
-	trail       = 2
+	chainLength = 10
+	startBlock  = 1
 )
 
-var _ = Describe("eth state reading tests", func() {
+func init() {
+	// The geth sync logs are noisy, silence them
+	log.Root().SetHandler(log.DiscardHandler())
+}
+
+var _ = Describe("State validation", func() {
 	var (
-		blocks      []*types.Block
-		receipts    []types.Receipts
 		chain       *core.BlockChain
 		db          *sqlx.DB
 		chainConfig = validator.TestChainConfig
 		mockTD      = big.NewInt(1337)
 	)
 
-	It("test init", func() {
-		db = shared.SetupDB()
-		transformer := shared.SetupTestStateDiffIndexer(context.Background(), chainConfig, validator_test.Genesis.Hash())
-
+	BeforeEach(func() {
+		var (
+			blocks   []*types.Block
+			receipts []types.Receipts
+		)
 		// make the test blockchain (and state)
-		blocks, receipts, chain = validator_test.MakeChain(chainLength, validator_test.Genesis, validator_test.TestChainGen)
-		params := statediff.Params{
-			IntermediateStateNodes:   true,
-			IntermediateStorageNodes: true,
-		}
+		gen := chaingen.DefaultGenContext(chainConfig, helpers.TestDB)
+		blocks, receipts, chain = gen.MakeChain(chainLength)
 
-		// iterate over the blocks, generating statediff payloads, and transforming the data into Postgres
-		builder := statediff.NewBuilder(chain.StateCache())
-		for i, block := range blocks {
-			var args statediff.Args
-			var rcts types.Receipts
-			if i == 0 {
-				args = statediff.Args{
-					OldStateRoot: common.Hash{},
-					NewStateRoot: block.Root(),
-					BlockNumber:  block.Number(),
-					BlockHash:    block.Hash(),
-				}
-			} else {
-				args = statediff.Args{
-					OldStateRoot: blocks[i-1].Root(),
-					NewStateRoot: block.Root(),
-					BlockNumber:  block.Number(),
-					BlockHash:    block.Hash(),
-				}
-				rcts = receipts[i-1]
-			}
-
-			diff, err := builder.BuildStateDiffObject(args, params)
-			Expect(err).ToNot(HaveOccurred())
-			tx, err := transformer.PushBlock(block, rcts, mockTD)
-			Expect(err).ToNot(HaveOccurred())
-
-			for _, node := range diff.Nodes {
-				err := transformer.PushStateNode(tx, node, block.Hash().String())
-				Expect(err).ToNot(HaveOccurred())
-			}
-
-			err = tx.Submit(err)
-			Expect(err).ToNot(HaveOccurred())
-		}
+		indexer, err := helpers.TestStateDiffIndexer(context.Background(), chainConfig, gen.Genesis.Hash())
+		Expect(err).ToNot(HaveOccurred())
+		helpers.IndexChain(indexer, helpers.IndexChainParams{
+			StateCache:      chain.StateCache(),
+			Blocks:          blocks,
+			Receipts:        receipts,
+			TotalDifficulty: mockTD,
+		})
 
 		// Insert some non-canonical data into the database so that we test our ability to discern canonicity
-		indexAndPublisher := shared.SetupTestStateDiffIndexer(context.Background(), chainConfig, validator_test.Genesis.Hash())
-
-		tx, err := indexAndPublisher.PushBlock(test_helpers.MockBlock, test_helpers.MockReceipts, test_helpers.MockBlock.Difficulty())
+		tx, err := indexer.PushBlock(server_mocks.MockBlock, server_mocks.MockReceipts,
+			server_mocks.MockBlock.Difficulty())
 		Expect(err).ToNot(HaveOccurred())
 
 		err = tx.Submit(err)
 		Expect(err).ToNot(HaveOccurred())
 
 		// The non-canonical header has a child
-		tx, err = indexAndPublisher.PushBlock(test_helpers.MockChild, test_helpers.MockReceipts, test_helpers.MockChild.Difficulty())
+		tx, err = indexer.PushBlock(server_mocks.MockChild, server_mocks.MockReceipts, server_mocks.MockChild.Difficulty())
 		Expect(err).ToNot(HaveOccurred())
 
-		hash := sdtypes.CodeAndCodeHash{
-			Hash: test_helpers.CodeHash,
-			Code: test_helpers.ContractCode,
+		ipld := sdtypes.IPLD{
+			CID:     ipld.Keccak256ToCid(ipld.RawBinary, server_mocks.CodeHash.Bytes()).String(),
+			Content: server_mocks.ContractCode,
 		}
-
-		err = indexAndPublisher.PushCodeAndCodeHash(tx, hash)
+		err = indexer.PushIPLD(tx, ipld)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = tx.Submit(err)
 		Expect(err).ToNot(HaveOccurred())
+
+		db = helpers.SetupDB()
 	})
 
-	defer It("test teardown", func() {
-		shared.TearDownDB(db)
+	AfterEach(func() {
+		helpers.TearDownDB(db)
 		chain.Stop()
 	})
 
-	Describe("state_validation", func() {
-		It("Validator", func() {
-			api, err := validator.EthAPI(context.Background(), db, validator.TestChainConfig)
+	It("Validator", func() {
+		api, err := validator.EthAPI(context.Background(), db, chainConfig)
+		Expect(err).ToNot(HaveOccurred())
+
+		for i := uint64(startBlock); i <= chainLength; i++ {
+			blockToBeValidated, err := api.B.BlockByNumber(context.Background(), rpc.BlockNumber(i))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(blockToBeValidated).ToNot(BeNil())
+
+			err = validator.ValidateBlock(blockToBeValidated, api.B, i)
 			Expect(err).ToNot(HaveOccurred())
 
-			for i := uint64(blockHeight); i <= chainLength-trail; i++ {
-				blockToBeValidated, err := api.B.BlockByNumber(context.Background(), rpc.BlockNumber(i))
-				Expect(err).ToNot(HaveOccurred())
-				Expect(blockToBeValidated).ToNot(BeNil())
-
-				err = validator.ValidateBlock(blockToBeValidated, api.B, i)
-				Expect(err).ToNot(HaveOccurred())
-
-				err = validator.ValidateReferentialIntegrity(db, i)
-				Expect(err).ToNot(HaveOccurred())
-			}
-		})
+			err = validator.ValidateReferentialIntegrity(db, i)
+			Expect(err).ToNot(HaveOccurred())
+		}
 	})
 })
