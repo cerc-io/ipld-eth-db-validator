@@ -3,9 +3,9 @@ on:
   workflow_call:
 
 env:
-  STACK_ORCHESTRATOR_REF: "f2fd766f5400fcb9eb47b50675d2e3b1f2753702"
-  GO_ETHEREUM_REF: "v1.10.26-statediff-4.2.2-alpha" # Use the tag, we are going to download the bin not build it.
-  IPLD_ETH_DB_REF: "a4961e5e597148c0ff6dd7a34958bdf8c469a47e"
+  STACK_ORCHESTRATOR_REF: "e62830c982d4dfc5f3c1c2b12c1754a7e9b538f1"
+  GO_ETHEREUM_REF: "v1.11.5-statediff-4.3.9-alpha" # Use the tag, we are going to download the bin not build it.
+  IPLD_ETH_DB_REF: "6c00c38cc4e1db6f7c4cecbb62fdfd540fba50d6"
 
 jobs:
   integrationtest:
@@ -20,7 +20,7 @@ jobs:
 
       - uses: actions/setup-go@v3
         with:
-          go-version: "1.18.0"
+          go-version: "1.19.0"
           check-latest: true
 
       - uses: actions/checkout@v2
@@ -31,7 +31,7 @@ jobs:
         with:
           ref: ${{ env.STACK_ORCHESTRATOR_REF }}
           path: "./stack-orchestrator/"
-          repository: vulcanize/stack-orchestrator
+          repository: cerc-io/mshaw_stack_hack
 
       - uses: actions/checkout@v2
         with:
@@ -75,11 +75,11 @@ jobs:
 
       - uses: actions/setup-go@v3
         with:
-          go-version: "1.18.0"
+          go-version: "1.19.0"
           check-latest: true
       - name: Checkout code
         uses: actions/checkout@v2
-        
+
       - name: Spin up database
         run: |
           docker-compose up -d
