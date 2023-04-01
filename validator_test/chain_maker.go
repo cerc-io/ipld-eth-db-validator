@@ -2,8 +2,9 @@ package validator_test
 
 import (
 	"crypto/ecdsa"
-	"github.com/ethereum/go-ethereum/statediff/test_helpers"
 	"math/big"
+
+	"github.com/ethereum/go-ethereum/statediff/test_helpers"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
@@ -71,7 +72,7 @@ func createLondonTransaction(block *core.BlockGen, addr *common.Address, key *ec
 func MakeChain(n int, parent *types.Block, chainGen func(int, *core.BlockGen)) ([]*types.Block, []types.Receipts, *core.BlockChain) {
 	config := validator.TestChainConfig
 	blocks, receipts := core.GenerateChain(config, parent, ethash.NewFaker(), Testdb, n, chainGen)
-	chain, _ := core.NewBlockChain(Testdb, nil, validator.TestChainConfig, ethash.NewFaker(), vm.Config{}, nil, nil)
+	chain, _ := core.NewBlockChain(Testdb, nil, nil, nil, ethash.NewFaker(), vm.Config{}, nil, nil)
 	return append([]*types.Block{parent}, blocks...), receipts, chain
 }
 

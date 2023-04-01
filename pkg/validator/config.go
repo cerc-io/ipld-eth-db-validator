@@ -21,6 +21,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/cerc-io/ipld-eth-db-validator/pkg/prom"
 	"github.com/cerc-io/ipld-eth-server/v4/pkg/shared"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -28,7 +29,6 @@ import (
 	"github.com/ethereum/go-ethereum/statediff/indexer/database/sql/postgres"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
-	"github.com/cerc-io/ipld-eth-db-validator/pkg/prom"
 )
 
 var IntegrationTestChainConfig = &params.ChainConfig{

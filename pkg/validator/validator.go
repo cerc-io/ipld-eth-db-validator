@@ -267,8 +267,14 @@ func EthAPI(ctx context.Context, db *sqlx.DB, chainCfg *params.ChainConfig) (*ip
 		}
 		backend.Config.ChainConfig = setChainConfig(genesisBlock.Hash())
 	}
-
-	return ipldEth.NewPublicEthAPI(backend, nil, false, false, false)
+	conf := ipldEth.APIConfig{
+		SupportsStateDiff:   false,
+		ForwardEthCalls:     false,
+		ForwardGetStorageAt: false,
+		ProxyOnError:        false,
+		StateDiffTimeout:    0,
+	}
+	return ipldEth.NewPublicEthAPI(backend, nil, conf)
 }
 
 // fetchHeadBlockNumber gets the latest block number from the db
@@ -307,16 +313,16 @@ func applyTransaction(block *types.Block, backend *ipldEth.Backend) (*state.Stat
 
 	signer := types.MakeSigner(backend.Config.ChainConfig, block.Number())
 
-	for idx, tx := range block.Transactions() {
+	for _, tx := range block.Transactions() {
 		// Assemble the transaction call message and return if the requested offset
-		msg, _ := tx.AsMessage(signer, block.BaseFee())
+		msg, _ := core.TransactionToMessage(tx, signer, block.BaseFee())
 		txContext := core.NewEVMTxContext(msg)
 		ctx := core.NewEVMBlockContext(block.Header(), backend, getAuthor(backend, block.Header()))
 
 		// Not yet the searched for transaction, execute on top of the current state
 		newEVM := vm.NewEVM(ctx, txContext, stateDB, backend.Config.ChainConfig, vm.Config{})
-
-		stateDB.Prepare(tx.Hash(), idx)
+		rules := backend.Config.ChainConfig.Rules(block.Number(), true, block.Time())
+		stateDB.Prepare(rules, msg.From, block.Coinbase(), msg.To, nil, nil)
 		if _, err := core.ApplyMessage(newEVM, msg, new(core.GasPool).AddGas(block.GasLimit())); err != nil {
 			return nil, fmt.Errorf("transaction %#x failed: %w", tx.Hash(), err)
 		}
@@ -364,8 +370,6 @@ func setChainConfig(ghash common.Hash) *params.ChainConfig {
 	switch {
 	case ghash == params.MainnetGenesisHash:
 		return params.MainnetChainConfig
-	case ghash == params.RopstenGenesisHash:
-		return params.RopstenChainConfig
 	case ghash == params.SepoliaGenesisHash:
 		return params.SepoliaChainConfig
 	case ghash == params.RinkebyGenesisHash:
