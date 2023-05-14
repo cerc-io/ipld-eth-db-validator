@@ -1,4 +1,4 @@
-package integration
+package integration_test
 
 import (
 	"context"
@@ -7,15 +7,13 @@ import (
 	"testing"
 	"time"
 
-	ipldeth "github.com/cerc-io/ipld-eth-server/v5/pkg/eth"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/statediff/indexer/database/sql/postgres"
+	// "github.com/ethereum/go-ethereum/statediff"
 	"github.com/onsi/gomega"
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
 
+	"github.com/cerc-io/ipld-eth-db-validator/v5/integration"
 	"github.com/cerc-io/ipld-eth-db-validator/v5/pkg/validator"
-	"github.com/cerc-io/ipld-eth-db-validator/v5/test/helpers"
 )
 
 var (
@@ -58,27 +56,42 @@ const (
 )
 
 var (
-	ctx      = context.Background()
-	dbConfig = helpers.DBConfig
-	wg       sync.WaitGroup
+	ctx = context.Background()
+	// dbConfig = helpers.DBConfig
+	wg sync.WaitGroup
 )
 
 func setup(t *testing.T, progressChan chan uint64) *atomicBlockSet {
 	// Start validator at current head, but not before PoS transition
 	// (test chain Merge is at block 1)
-	startFrom := latestBlock(t)
+
+	// startFrom := latestBlock(t)
+	// if startFrom < 1 {
+	// 	startFrom = 1
+	// }
+
+	// cfg := validator.Config{
+	// 	DBConfig:      dbConfig,
+	// 	FromBlock:     startFrom,
+	// 	Trail:         0,
+	// 	RetryInterval: retryInterval,
+	// 	ChainConfig:   chainConfig,
+	// }
+
+	cfg, err := validator.NewConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	startFrom := latestBlock(t, cfg.DBConfig)
 	if startFrom < 1 {
 		startFrom = 1
 	}
-	cfg := validator.Config{
-		DBConfig:      dbConfig,
-		FromBlock:     startFrom,
-		Trail:         0,
-		RetryInterval: retryInterval,
-		ChainConfig:   chainConfig,
+
+	service, err := validator.NewService(cfg, progressChan)
+	if err != nil {
+		t.Fatal(err)
 	}
-	service, err := validator.NewService(&cfg, progressChan)
-	require.NoError(t, err)
 
 	// Start tracking validated blocks, so we don't miss any
 	validated := newBlockSet()
@@ -105,8 +118,10 @@ func TestValidateContracts(t *testing.T) {
 	progressChan := make(chan uint64, 10)
 	validated := setup(t, progressChan)
 
-	contract, err := DeployTestContract()
-	require.NoError(t, err)
+	contract, err := integration.DeployTestContract()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("contract deployment", func(t *testing.T) {
 		g := gomega.NewWithT(t)
@@ -119,8 +134,10 @@ func TestValidateContracts(t *testing.T) {
 
 		var blocks []uint64
 		for i := 0; i < 10; i++ {
-			res, err := PutTestValue(contract.Address, i)
-			require.NoError(t, err)
+			res, err := integration.PutTestValue(contract.Address, i)
+			if err != nil {
+				t.Fatal(err)
+			}
 			t.Logf("Put() called at block %d", res.BlockNumber)
 			blocks = append(blocks, res.BlockNumber)
 		}
@@ -134,13 +151,15 @@ func TestValidateTransactions(t *testing.T) {
 	progressChan := make(chan uint64, 100)
 	validated := setup(t, progressChan)
 
-	t.Run("eth transfer transactions", func(t *testing.T) {
+	t.Run("ETH transfer transactions", func(t *testing.T) {
 		g := gomega.NewWithT(t)
 
 		var blocks []uint64
 		for _, address := range testAddresses {
-			tx, err := SendEth(address, "0.01")
-			require.NoError(t, err)
+			tx, err := integration.SendEth(address, "0.01")
+			if err != nil {
+				t.Fatal(err)
+			}
 			t.Logf("Sent tx at block %d", tx.BlockNumber)
 			blocks = append(blocks, tx.BlockNumber)
 		}
@@ -148,50 +167,4 @@ func TestValidateTransactions(t *testing.T) {
 		g.Expect(progressChan).ToNot(BeClosed())
 		g.Eventually(validated.containsAll, timeout).WithArguments(blocks).Should(BeTrue())
 	})
-}
-
-type atomicBlockSet struct {
-	blocks map[uint64]struct{}
-	sync.Mutex
-}
-
-func newBlockSet() *atomicBlockSet {
-	return &atomicBlockSet{blocks: make(map[uint64]struct{})}
-}
-
-func (set *atomicBlockSet) contains(block uint64) bool {
-	set.Lock()
-	defer set.Unlock()
-	for done := range set.blocks {
-		if done == block {
-			return true
-		}
-	}
-	return false
-}
-
-func (set *atomicBlockSet) containsAll(blocks []uint64) bool {
-	for _, block := range blocks {
-		if !set.contains(block) {
-			return false
-		}
-	}
-	return true
-}
-
-func (set *atomicBlockSet) add(block uint64) {
-	set.Lock()
-	defer set.Unlock()
-	set.blocks[block] = struct{}{}
-}
-
-func latestBlock(t *testing.T) uint64 {
-	db, err := postgres.ConnectSQLX(ctx, dbConfig)
-	require.NoError(t, err)
-	defer db.Close()
-
-	retriever := ipldeth.NewRetriever(db)
-	lastBlock, err := retriever.RetrieveLastBlockNumber()
-	require.NoError(t, err)
-	return uint64(lastBlock)
 }

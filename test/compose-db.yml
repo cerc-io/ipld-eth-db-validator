@@ -1,11 +1,11 @@
-# This compose file runs services for integration testing.
+# Containers to run backing DB for unit testing
 
 services:
   migrations:
     restart: on-failure
     depends_on:
       - ipld-eth-db
-    image: cerc/ipld-eth-db:v5
+    image: git.vdb.to/cerc-io/ipld-eth-db/ipld-eth-db:v5.0.2-alpha
     environment:
       DATABASE_USER: "vdbm"
       DATABASE_NAME: "cerc_testing"
@@ -23,4 +23,4 @@ services:
       POSTGRES_DB: "cerc_testing"
       POSTGRES_PASSWORD: "password"
     ports:
-      - "127.0.0.1:8088:5432"
+      - "127.0.0.1:8077:5432"

@@ -1,0 +1,57 @@
+name: Unit and integration tests
+on:
+  workflow_call:
+
+jobs:
+  unit-tests:
+    name: "Run unit tests"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
+          check-latest: true
+      - name: "Run DB container"
+        working-directory: ./test
+        run: |
+          docker compose up --wait
+      - name: "Run tests"
+        run: |
+          until [[ "$(docker inspect test-ipld-eth-db | jq -r '.[0].State.Status')" = 'running' ]]
+          do sleep 1; done &
+          go build ./...
+          wait $!
+          go test -v ./pkg/...
+
+  integration-tests:
+    name: "Run integration tests"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
+          check-latest: true
+      - name: "Install stack-orchestrator"
+        # FIXME: using my dev branch for v5 migration changes until a release has them
+        uses: actions/checkout@v3
+        with:
+          repository: cerc-io/stack-orchestrator
+          ref: roy/for-ci
+      - run: pip install -e ./stack-orchestrator
+      - name: "Run testnet stack"
+        env:
+          LACONIC_SO: laconic-so
+        run: ./scripts/integration-setup.sh
+      - name: "Run contract deployer"
+        env:
+          ETH_CHAIN_ID: ${{ env.ETH_CHAIN_ID }}
+          DEPLOYER_PRIVATE_KEY: ${{ env.DEPLOYER_PRIVATE_KEY }}
+        run: docker compose -f test/compose-deployer.yml up --wait
+      - name: "Run tests"
+        env:
+          ETH_CHAIN_CONFIG: ${{ env.ETH_CHAIN_CONFIG }}
+          ETH_HTTP_PATH: ${{ env.ETH_HTTP_PATH }}
+        run: |
+          go test -v ./integration/...
