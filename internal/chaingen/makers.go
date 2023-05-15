@@ -10,7 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/statediff/test_helpers"
 
 	"github.com/cerc-io/ipld-eth-db-validator/v5/fixture"
-	"github.com/cerc-io/ipld-eth-db-validator/v5/test/helpers"
 )
 
 var (
@@ -31,9 +30,9 @@ func init() {
 // A GenContext which exactly replicates the chain generator used in existing tests
 func DefaultGenContext(chainConfig *params.ChainConfig, db ethdb.Database) *GenContext {
 	gen := NewGenContext(chainConfig, db)
-	bank = gen.AddOwnedAccount(helpers.TestBankKey)
-	acct1 = gen.AddOwnedAccount(helpers.Account1Key)
-	acct2 = gen.AddOwnedAccount(helpers.Account2Key)
+	bank = gen.AddOwnedAccount(test_helpers.TestBankKey)
+	acct1 = gen.AddOwnedAccount(test_helpers.Account1Key)
+	acct2 = gen.AddOwnedAccount(test_helpers.Account2Key)
 	gen.AddContract("Test", defaultContract)
 
 	gen.AddFunction(func(i int, block *core.BlockGen) {
@@ -42,7 +41,7 @@ func DefaultGenContext(chainConfig *params.ChainConfig, db ethdb.Database) *GenC
 		}
 	})
 	gen.Genesis = test_helpers.GenesisBlockForTesting(
-		db, bank, helpers.TestBankFunds, big.NewInt(params.InitialBaseFee), params.MaxGasLimit,
+		db, bank, test_helpers.TestBankFunds, big.NewInt(params.InitialBaseFee), params.MaxGasLimit,
 	)
 	return gen
 }

@@ -1,13 +1,13 @@
 module github.com/cerc-io/ipld-eth-db-validator/v5
 
-go 1.18
+go 1.19
 
 require (
 	github.com/cerc-io/ipfs-ethdb/v5 v5.0.0
 	github.com/cerc-io/ipld-eth-db-validator v0.0.0-20230401192944-a7f4e4d70487
 	github.com/cerc-io/ipld-eth-server/v5 v5.0.0
 	github.com/cerc-io/ipld-eth-statedb v0.0.4-alpha
-	github.com/ethereum/go-ethereum v1.11.6
+	github.com/ethereum/go-ethereum v1.11.5
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/onsi/ginkgo/v2 v2.9.2
 	github.com/onsi/gomega v1.27.4
@@ -27,9 +27,10 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
+	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.2 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
-	github.com/cerc-io/eth-ipfs-state-validator/v5 v5.0.0 // indirect
+	github.com/cerc-io/eth-ipfs-state-validator/v5 v5.0.0-alpha // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cockroachdb/errors v1.9.1 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
@@ -268,7 +269,6 @@ require (
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
@@ -277,10 +277,4 @@ require (
 	lukechampine.com/blake3 v1.1.7 // indirect
 )
 
-replace github.com/ethereum/go-ethereum => github.com/cerc-io/go-ethereum v1.11.6-statediff-5.0.2-alpha
-
-replace (
-	github.com/cerc-io/eth-ipfs-state-validator/v5 => ../eth-ipfs-state-validator
-	github.com/cerc-io/ipld-eth-server/v5 => ../ipld-eth-server
-	github.com/cerc-io/ipld-eth-statedb => ../ipld-eth-statedb
-)
+replace github.com/ethereum/go-ethereum => github.com/cerc-io/go-ethereum v1.11.5-statediff-5.0.3-alpha

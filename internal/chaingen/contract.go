@@ -13,7 +13,6 @@ type ContractSpec struct {
 }
 
 func ParseContract(abiStr, binStr string) (*ContractSpec, error) {
-	println(abiStr)
 	parsedABI, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
 		return nil, err

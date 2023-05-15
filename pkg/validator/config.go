@@ -18,7 +18,6 @@ package validator
 
 import (
 	"fmt"
-	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/params"
@@ -28,23 +27,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/statediff/indexer/database/sql/postgres"
 )
-
-var TestChainConfig = &params.ChainConfig{
-	ChainID:             big.NewInt(1),
-	HomesteadBlock:      big.NewInt(0),
-	EIP150Block:         big.NewInt(0),
-	EIP155Block:         big.NewInt(0),
-	EIP158Block:         big.NewInt(0),
-	ByzantiumBlock:      big.NewInt(0),
-	ConstantinopleBlock: big.NewInt(0),
-	PetersburgBlock:     big.NewInt(0),
-	IstanbulBlock:       big.NewInt(0),
-	MuirGlacierBlock:    big.NewInt(0),
-	BerlinBlock:         big.NewInt(0),
-	LondonBlock:         big.NewInt(6),
-	ArrowGlacierBlock:   big.NewInt(0),
-	Ethash:              new(params.EthashConfig),
-}
 
 type Config struct {
 	DBConfig postgres.Config
@@ -124,7 +106,7 @@ func (c *Config) setupValidator() error {
 	var err error
 	c.FromBlock = viper.GetUint64("validate.fromHeight")
 	if c.FromBlock < 1 {
-		return fmt.Errorf("block height cannot be less the 1")
+		return fmt.Errorf("starting block height cannot be less than 1")
 	}
 
 	c.Trail = viper.GetUint64("validate.trail")

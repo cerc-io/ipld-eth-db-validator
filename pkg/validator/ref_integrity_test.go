@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -13,10 +14,15 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/cerc-io/ipld-eth-db-validator/v5/internal/chaingen"
+	"github.com/cerc-io/ipld-eth-db-validator/v5/internal/helpers"
 	"github.com/cerc-io/ipld-eth-db-validator/v5/pkg/validator"
-	"github.com/cerc-io/ipld-eth-db-validator/v5/test/chaingen"
-	"github.com/cerc-io/ipld-eth-db-validator/v5/test/helpers"
 )
+
+func TestETHSuite(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "eth ipld validator eth suite test")
+}
 
 var _ = Describe("referential integrity", func() {
 	var (
@@ -28,7 +34,7 @@ var _ = Describe("referential integrity", func() {
 			blocks      []*types.Block
 			receipts    []types.Receipts
 			chain       *core.BlockChain
-			chainConfig = validator.TestChainConfig
+			chainConfig = TestChainConfig
 			mockTD      = big.NewInt(1337)
 			testdb      = rawdb.NewMemoryDatabase()
 		)
