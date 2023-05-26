@@ -117,7 +117,7 @@ func (s *Service) Start(ctx context.Context, wg *sync.WaitGroup) {
 			err := s.Validate(ctx, api, idxBlockNum)
 			// If chain is not synced, wait for trail to catch up before trying again
 			if err, ok := err.(*ChainNotSyncedError); ok {
-				log.Infof("waiting for chain to advance, head is at block %d", err.Head)
+				log.Debugf("waiting for chain to advance, head is at block %d", err.Head)
 				delay = s.retryInterval
 				continue
 			}

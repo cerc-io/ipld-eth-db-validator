@@ -133,6 +133,8 @@ github.com/cenkalti/backoff/v4 v4.1.3 h1:cFAlzYUlVYDysBEH2T5hyJZMh3+5+WCBvSnK6Q8
 github.com/cenkalti/backoff/v4 v4.1.3/go.mod h1:scbssz8iZGpm3xbr14ovlUdkxfGXNInqkPWOWmG2CLw=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/ceramicnetwork/go-dag-jose v0.1.0 h1:yJ/HVlfKpnD3LdYP03AHyTvbm3BpPiz2oZiOeReJRdU=
+github.com/cerc-io/eth-ipfs-state-validator/v5 v5.0.0-alpha h1:TGCr/v0CrDsz1Mjr4000omuEGw7RNdn+OYqIivlF3+Q=
+github.com/cerc-io/eth-ipfs-state-validator/v5 v5.0.0-alpha/go.mod h1:t+1UYws60dkLRecMN2NXl4LlKxQBLjhDh34swi6Jcvc=
 github.com/cerc-io/ipld-eth-db-validator v0.0.0-20230401192944-a7f4e4d70487 h1:XBuS6If6741cL9iM1TMFP24F+h36wPRJbn0EKEFvyGs=
 github.com/cerc-io/ipld-eth-db-validator v0.0.0-20230401192944-a7f4e4d70487/go.mod h1:w/3AFfsEjV7EiccODx0hQj31BQ0wH0eFK6nT9UCghHI=
 github.com/cespare/cp v0.1.0 h1:SE+dxFebS7Iik5LK0tsi1k9ZCxEaFX4AjQmoyA+1dJk=

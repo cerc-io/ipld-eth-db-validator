@@ -2,40 +2,21 @@ package integration_test
 
 import (
 	"context"
-	"math/big"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/params"
-	// "github.com/ethereum/go-ethereum/statediff"
 	"github.com/onsi/gomega"
 	. "github.com/onsi/gomega"
 
+	// imported to register env vars with viper
+	_ "github.com/cerc-io/ipld-eth-db-validator/v5/cmd"
 	"github.com/cerc-io/ipld-eth-db-validator/v5/integration"
+	"github.com/cerc-io/ipld-eth-db-validator/v5/internal/helpers"
 	"github.com/cerc-io/ipld-eth-db-validator/v5/pkg/validator"
 )
 
 var (
-	chainConfig = &params.ChainConfig{
-		ChainID:             big.NewInt(1212),
-		HomesteadBlock:      big.NewInt(1),
-		EIP150Block:         big.NewInt(1),
-		EIP155Block:         big.NewInt(1),
-		EIP158Block:         big.NewInt(1),
-		ByzantiumBlock:      big.NewInt(1),
-		ConstantinopleBlock: big.NewInt(1),
-		PetersburgBlock:     big.NewInt(1),
-		IstanbulBlock:       big.NewInt(1),
-		BerlinBlock:         big.NewInt(1),
-		LondonBlock:         big.NewInt(1),
-
-		Clique: &params.CliqueConfig{
-			Period: 0,
-			Epoch:  30000,
-		},
-	}
-
 	testAddresses = []string{
 		"0x1111111111111111111111111111111111111112",
 		"0x1ca7c995f8eF0A2989BbcE08D5B7Efe50A584aa1",
@@ -57,36 +38,19 @@ const (
 
 var (
 	ctx = context.Background()
-	// dbConfig = helpers.DBConfig
-	wg sync.WaitGroup
+	wg  sync.WaitGroup
 )
 
 func setup(t *testing.T, progressChan chan uint64) *atomicBlockSet {
 	// Start validator at current head, but not before PoS transition
 	// (test chain Merge is at block 1)
 
-	// startFrom := latestBlock(t)
-	// if startFrom < 1 {
-	// 	startFrom = 1
-	// }
-
-	// cfg := validator.Config{
-	// 	DBConfig:      dbConfig,
-	// 	FromBlock:     startFrom,
-	// 	Trail:         0,
-	// 	RetryInterval: retryInterval,
-	// 	ChainConfig:   chainConfig,
-	// }
-
 	cfg, err := validator.NewConfig()
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	startFrom := latestBlock(t, cfg.DBConfig)
-	if startFrom < 1 {
-		startFrom = 1
-	}
+	// set the default DB config to the testing defaults
+	cfg.DBConfig, _ = helpers.TestDBConfig.WithEnv()
 
 	service, err := validator.NewService(cfg, progressChan)
 	if err != nil {

@@ -6,7 +6,7 @@ require (
 	github.com/cerc-io/ipfs-ethdb/v5 v5.0.0
 	github.com/cerc-io/ipld-eth-db-validator v0.0.0-20230401192944-a7f4e4d70487
 	github.com/cerc-io/ipld-eth-server/v5 v5.0.0
-	github.com/cerc-io/ipld-eth-statedb v0.0.4-alpha
+	github.com/cerc-io/ipld-eth-statedb v0.0.5-alpha
 	github.com/ethereum/go-ethereum v1.11.5
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/onsi/ginkgo/v2 v2.9.2
@@ -277,4 +277,4 @@ require (
 	lukechampine.com/blake3 v1.1.7 // indirect
 )
 
-replace github.com/ethereum/go-ethereum => github.com/cerc-io/go-ethereum v1.11.5-statediff-5.0.3-alpha
+replace github.com/ethereum/go-ethereum => github.com/cerc-io/go-ethereum v1.11.5-statediff-5.0.5-alpha

@@ -68,11 +68,11 @@ func stateValidator() {
 func init() {
 	rootCmd.AddCommand(stateValidatorCmd)
 
-	stateValidatorCmd.PersistentFlags().String("block-height", "1", "block height to initiate state validation")
+	stateValidatorCmd.PersistentFlags().String("from-height", "1", "block height to initiate state validation")
 	stateValidatorCmd.PersistentFlags().String("trail", "16", "trail of block height to validate")
-	stateValidatorCmd.PersistentFlags().String("retry-interval", "10", "retry interval in seconds after validator has caught up to (head-trail) height")
+	stateValidatorCmd.PersistentFlags().String("retry-interval", "10s", "retry interval in seconds after validator has caught up to (head-trail) height")
 	stateValidatorCmd.PersistentFlags().Bool("statediff-missing-block", false, "whether to perform a statediffing call on a missing block")
-	stateValidatorCmd.PersistentFlags().Uint("statediff-timeout", 240, "statediffing call timeout period (in sec)")
+	stateValidatorCmd.PersistentFlags().String("statediff-timeout", "240s", "statediffing call timeout period (in sec)")
 
 	stateValidatorCmd.PersistentFlags().String("eth-chain-config", "", "path to json chain config")
 	stateValidatorCmd.PersistentFlags().String("eth-chain-id", "1", "eth chain id")
