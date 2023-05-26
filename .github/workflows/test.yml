@@ -13,9 +13,8 @@ jobs:
           go-version-file: 'go.mod'
           check-latest: true
       - name: "Run DB container"
-        working-directory: ./test
         run: |
-          docker compose up --wait
+          docker compose -f test/compose-db.yml up --wait
       - name: "Run tests"
         run: |
           until [[ "$(docker inspect test-ipld-eth-db | jq -r '.[0].State.Status')" = 'running' ]]
@@ -39,10 +38,9 @@ jobs:
         with:
           repository: cerc-io/stack-orchestrator
           ref: roy/for-ci
-      - run: pip install -e ./stack-orchestrator
+          path: ./stack-orchestrator
+      - run: pip install ./stack-orchestrator
       - name: "Run testnet stack"
-        env:
-          LACONIC_SO: laconic-so
         run: ./scripts/integration-setup.sh
       - name: "Run contract deployer"
         env:
