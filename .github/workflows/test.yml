@@ -20,6 +20,7 @@ jobs:
           until [[ "$(docker inspect test-ipld-eth-db | jq -r '.[0].State.Status')" = 'running' ]]
           do sleep 1; done &
           go build ./...
+          make contracts
           wait $!
           go test -v ./pkg/...
 

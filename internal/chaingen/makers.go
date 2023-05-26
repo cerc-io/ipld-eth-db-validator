@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/statediff/test_helpers"
 
-	"github.com/cerc-io/ipld-eth-db-validator/v5/fixture"
+	"github.com/cerc-io/ipld-eth-db-validator/v5/internal/testdata"
 )
 
 var (
@@ -21,7 +21,7 @@ var (
 
 func init() {
 	var err error
-	defaultContract, err = ParseContract(fixture.TestContractABI, fixture.TestContractCode)
+	defaultContract, err = ParseContract(testdata.TestContractABI, testdata.TestContractCode)
 	if err != nil {
 		panic(err)
 	}

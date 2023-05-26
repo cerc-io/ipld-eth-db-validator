@@ -1,4 +1,4 @@
-package fixture
+package testdata
 
 import _ "embed"
 

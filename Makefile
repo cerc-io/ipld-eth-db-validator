@@ -1,5 +1,5 @@
 CONTRACTS_DIR := ./test/contract/contracts
-CONTRACTS_OUTPUT_DIR := ./fixture/build
+CONTRACTS_OUTPUT_DIR := ./internal/testdata/build
 
 GINKGO := go run github.com/onsi/ginkgo/v2/ginkgo
 
