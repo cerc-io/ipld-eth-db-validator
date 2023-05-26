@@ -1,13 +1,7 @@
 package integration_test
 
 import (
-	"context"
 	"sync"
-	"testing"
-
-	"github.com/ethereum/go-ethereum/statediff/indexer/database/sql/postgres"
-
-	ipldeth "github.com/cerc-io/ipld-eth-server/v5/pkg/eth"
 )
 
 type atomicBlockSet struct {
@@ -43,19 +37,4 @@ func (set *atomicBlockSet) add(block uint64) {
 	set.Lock()
 	defer set.Unlock()
 	set.blocks[block] = struct{}{}
-}
-
-func latestBlock(t *testing.T, dbConfig postgres.Config) uint64 {
-	db, err := postgres.ConnectSQLX(context.Background(), dbConfig)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Close()
-
-	retriever := ipldeth.NewRetriever(db)
-	lastBlock, err := retriever.RetrieveLastBlockNumber()
-	if err != nil {
-		t.Fatal(err)
-	}
-	return uint64(lastBlock)
 }

@@ -42,9 +42,6 @@ curl -s $bootnode_endpoint/geth.json | jq '.config' > "$CONFIG_DIR/chain.json"
 #     sleep 1
 # done
 
-latest_block_hex=$(curl -s $geth_endpoint -X POST -H "Content-Type: application/json" \
-    --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":83}' | jq -r .result)
-
 # Output vars if we are running on Github
 if [[ -n "$GITHUB_ENV" ]]; then
     echo ETH_CHAIN_ID="$(jq '.chainId' $CONFIG_DIR/chain.json)" >> "$GITHUB_ENV"
@@ -52,6 +49,4 @@ if [[ -n "$GITHUB_ENV" ]]; then
     echo ETH_HTTP_PATH=$geth_endpoint >> "$GITHUB_ENV"
     # Read a private key so we can send from a funded account
     echo DEPLOYER_PRIVATE_KEY="$(curl -s $bootnode_endpoint/accounts.csv | head -1 | cut -d',' -f3)" >> "$GITHUB_ENV"
-    # Start from the latest block
-    echo VALIDATE_FROM_HEIGHT=$(printf "%d" $latest_block_hex) >> "$GITHUB_ENV"
 fi
