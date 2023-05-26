@@ -17,18 +17,19 @@ task("accounts", "Prints the list of accounts", async () => {
  * @type import('hardhat/config').HardhatUserConfig
  */
 
-const local_network = {
+const localNetwork = {
   url: process.env.ETH_ADDR || "http://127.0.0.1:8545",
   chainId: Number(process.env.ETH_CHAIN_ID) || 99,
 };
 
 if (process.env.DEPLOYER_PRIVATE_KEY) {
-  // local_network["deployer"] = process.env.DEPLOYER_PRIVATE_KEY;
-  local_network["accounts"] = [process.env.DEPLOYER_PRIVATE_KEY];
+  localNetwork["accounts"] = [process.env.DEPLOYER_PRIVATE_KEY];
 }
 
 module.exports = {
   solidity: "0.8.0",
-  networks: { local: local_network },
+  networks: {
+    local: localNetwork
+  },
   defaultNetwork: "local"
 };

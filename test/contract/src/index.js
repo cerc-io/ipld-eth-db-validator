@@ -1,7 +1,5 @@
-import hre from 'hardhat';
-import Fastify from 'fastify';
-
-const fastify = Fastify({ logger: true });
+const fastify = require('fastify')({ logger: true });
+const hre = require("hardhat");
 
 // readiness check
 fastify.get('/v1/healthz', async (req, reply) => {
@@ -15,7 +13,7 @@ fastify.get('/v1/sendEth', async (req, reply) => {
   const to = req.query.to;
   const value = hre.ethers.utils.parseEther(req.query.value);
 
-  const [owner] = await hre.ethers.getSigners();
+  const owner = await hre.ethers.getSigner();
   const tx = await owner.sendTransaction({to, value}).then(tx => tx.wait());
 
   return {
@@ -47,12 +45,10 @@ function contractDestroyer(name) {
     const addr = req.query.addr;
     const contract = await hre.ethers.getContractFactory(name);
     const instance = contract.attach(addr);
-
-    await instance.destroy();
-    const blockNum = await hre.ethers.provider.getBlockNumber()
+    const rct = await instance.destroy().then(tx => tx.wait());
 
     return {
-      blockNumber: blockNum,
+      blockNumber: rct.blockNumber,
     }
   }
 }
