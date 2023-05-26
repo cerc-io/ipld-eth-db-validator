@@ -20,5 +20,6 @@ var TestChainConfig = &params.ChainConfig{
 	BerlinBlock:         big.NewInt(0),
 	LondonBlock:         big.NewInt(6),
 	ArrowGlacierBlock:   big.NewInt(0),
+	GrayGlacierBlock:    big.NewInt(0),
 	Ethash:              new(params.EthashConfig),
 }

@@ -27,7 +27,19 @@ if (process.env.DEPLOYER_PRIVATE_KEY) {
 }
 
 module.exports = {
-  solidity: "0.8.0",
+  solidity: {
+    version: '0.8.20',
+    settings: {
+      evmVersion: 'paris',      // see Makefile
+      outputSelection: {
+        '*': {
+          '*': [
+            'abi', 'storageLayout',
+          ]
+        }
+      }
+    }
+  },
   networks: {
     local: localNetwork
   },

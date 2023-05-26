@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 contract Test {
-    event log_put (address, uint256);
+    event logPut (address, uint256);
 
     address payable owner;
     mapping(address => uint256) public data;
@@ -17,7 +17,7 @@ contract Test {
     }
 
     function Put(uint256 value) public {
-        emit log_put(msg.sender, value);
+        emit logPut(msg.sender, value);
 
         data[msg.sender] = value;
     }
