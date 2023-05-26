@@ -19,9 +19,9 @@ import (
 	"github.com/cerc-io/ipld-eth-db-validator/v5/pkg/validator"
 )
 
-func TestETHSuite(t *testing.T) {
+func TestRefIntegrity(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "eth ipld validator eth suite test")
+	RunSpecs(t, "ETH IPLD validator ref integrity suite test")
 }
 
 var _ = Describe("referential integrity", func() {
