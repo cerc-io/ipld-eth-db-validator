@@ -42,13 +42,17 @@ jobs:
         env:
           ETH_CHAIN_ID: ${{ env.ETH_CHAIN_ID }}
           DEPLOYER_PRIVATE_KEY: ${{ env.DEPLOYER_PRIVATE_KEY }}
+          ETH_HTTP_PATH: ${{ env.ETH_HTTP_PATH }}
         run: |
           docker compose -f test/compose-deployer.yml up --wait --quiet-pull
-          echo VALIDATE_FROM_HEIGHT=$(./scripts/get-latest-block.sh $ETH_HTTP_PATH) >> "$GITHUB_ENV"
+          while
+            height=$(./scripts/get-block-number.sh $ETH_HTTP_PATH)
+            [[ $latest < 2 ]]
+          do sleep 1; done
+          echo VALIDATE_FROM_HEIGHT=$height >> "$GITHUB_ENV"
       - name: "Run tests"
         env:
           ETH_CHAIN_CONFIG: ${{ env.ETH_CHAIN_CONFIG }}
-          ETH_HTTP_PATH: ${{ env.ETH_HTTP_PATH }}
           VALIDATE_FROM_HEIGHT: ${{ env.VALIDATE_FROM_HEIGHT }}
         run: |
           go test -v ./integration/...
