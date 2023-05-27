@@ -19,7 +19,7 @@ $laconic_so setup-repositories \
     --branches-file ./test/stack-refs.yml
 
 $laconic_so build-containers \
-    --exclude cerc/ipld-eth-server,cerc/keycloak,cerc/tx-spammer,cerc/go-ethereum
+    --exclude cerc/ipld-eth-server,cerc/keycloak,cerc/tx-spammer
 
 $laconic_so deploy \
     --include fixturenet-eth,ipld-eth-db \
