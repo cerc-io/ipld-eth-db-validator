@@ -14,7 +14,7 @@ jobs:
           check-latest: true
       - name: "Run DB container"
         run: |
-          docker compose -f test/compose-db.yml up --wait
+          docker compose -f test/compose-db.yml up --wait --quiet-pull
       - name: "Run tests"
         run: |
           until [[ "$(docker inspect test-ipld-eth-db | jq -r '.[0].State.Status')" = 'running' ]]
@@ -47,7 +47,7 @@ jobs:
         env:
           ETH_CHAIN_ID: ${{ env.ETH_CHAIN_ID }}
           DEPLOYER_PRIVATE_KEY: ${{ env.DEPLOYER_PRIVATE_KEY }}
-        run: docker compose -f test/compose-deployer.yml up --wait
+        run: docker compose -f test/compose-deployer.yml up --wait --quiet-pull
       - name: "Run tests"
         env:
           ETH_CHAIN_CONFIG: ${{ env.ETH_CHAIN_CONFIG }}
