@@ -3,9 +3,6 @@ module github.com/cerc-io/ipld-eth-db-validator/v5
 go 1.19
 
 require (
-	github.com/cerc-io/ipfs-ethdb/v5 v5.0.0-alpha
-	github.com/cerc-io/ipld-eth-db-validator v0.0.0-20230401192944-a7f4e4d70487
-	github.com/cerc-io/ipld-eth-server/v5 v5.0.0-20230525133948-6d7487152ca7 // FIXME dev
 	github.com/cerc-io/ipld-eth-statedb v0.0.5-alpha
 	github.com/ethereum/go-ethereum v1.11.5
 	github.com/jmoiron/sqlx v1.3.5
@@ -15,6 +12,11 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.11.0
+)
+// DEV
+require (
+	github.com/cerc-io/ipfs-ethdb/v5 v5.0.0-alpha.0.20230513183304-c438c158fc24
+	github.com/cerc-io/ipld-eth-server/v5 v5.0.0-20230525133948-6d7487152ca7
 )
 
 require (

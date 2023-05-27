@@ -150,6 +150,8 @@ github.com/cerc-io/go-ethereum v1.11.5-statediff-5.0.5-alpha h1:Rj/5+dDbYWa5k58g
 github.com/cerc-io/go-ethereum v1.11.5-statediff-5.0.5-alpha/go.mod h1:DIk2wFexjyzvyjuzSOtBEIAPRNZTnLXNbIHEyq1Igek=
 github.com/cerc-io/ipfs-ethdb/v5 v5.0.0-alpha h1:I1iXTaIjbTH8ehzNXmT2waXcYBifi1yjK6FK3W3a0Pg=
 github.com/cerc-io/ipfs-ethdb/v5 v5.0.0-alpha/go.mod h1:EGAdV/YewEADFDDVF1k9GNwy8vNWR29Xb87sRHgMIng=
+github.com/cerc-io/ipfs-ethdb/v5 v5.0.0-alpha.0.20230513183304-c438c158fc24 h1:P3JRgt4DRzgA4JGfURsBN3k4dro0XOrAj0891bMDFh4=
+github.com/cerc-io/ipfs-ethdb/v5 v5.0.0-alpha.0.20230513183304-c438c158fc24/go.mod h1:EGAdV/YewEADFDDVF1k9GNwy8vNWR29Xb87sRHgMIng=
 github.com/cerc-io/ipld-eth-db-validator v0.0.0-20230401192944-a7f4e4d70487 h1:XBuS6If6741cL9iM1TMFP24F+h36wPRJbn0EKEFvyGs=
 github.com/cerc-io/ipld-eth-db-validator v0.0.0-20230401192944-a7f4e4d70487/go.mod h1:w/3AFfsEjV7EiccODx0hQj31BQ0wH0eFK6nT9UCghHI=
 github.com/cerc-io/ipld-eth-server/v5 v5.0.0-20230525133948-6d7487152ca7 h1:5izYvMUKQot4e8dh8fyl7/zpglupautha01csfxVark=

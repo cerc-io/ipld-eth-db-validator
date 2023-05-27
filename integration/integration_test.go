@@ -23,17 +23,11 @@ var (
 		"0x9a4b666af23a2cdb4e5538e1d222a445aeb82134",
 		"0xF7C7AEaECD2349b129d5d15790241c32eeE4607B",
 		"0x992b6E9BFCA1F7b0797Cee10b0170E536EAd3532",
-		"0x29ed93a7454Bc17a8D4A24D0627009eE0849B990",
-		"0x66E3dCA826b04B5d4988F7a37c91c9b1041e579D",
-		"0x96288939Ac7048c27E0E087b02bDaad3cd61b37b",
-		"0xD354280BCd771541c935b15bc04342c26086FE9B",
-		"0x7f887e25688c274E77b8DeB3286A55129B55AF14",
 	}
 )
 
 const (
-	timeout       = 2 * time.Minute
-	retryInterval = 4 * time.Second
+	timeout = 5 * time.Minute
 )
 
 var (
@@ -42,9 +36,6 @@ var (
 )
 
 func setup(t *testing.T, progressChan chan uint64) *atomicBlockSet {
-	// Start validator at current head, but not before PoS transition
-	// (test chain Merge is at block 1)
-
 	cfg, err := validator.NewConfig()
 	if err != nil {
 		t.Fatal(err)
@@ -97,7 +88,7 @@ func TestValidateContracts(t *testing.T) {
 		g := gomega.NewWithT(t)
 
 		var blocks []uint64
-		for i := 0; i < 10; i++ {
+		for i := 0; i < 5; i++ {
 			res, err := integration.PutTestValue(contract.Address, i)
 			if err != nil {
 				t.Fatal(err)

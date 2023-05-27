@@ -46,6 +46,8 @@ jobs:
         timeout-minutes: 10
         run: |
           docker compose -f test/compose-deployer.yml up --wait --quiet-pull
+          # Start validator at current head, but not before PoS transition
+          # (test chain Merge is at block 1)
           while
               height=$(./scripts/get-block-number.sh $ETH_HTTP_PATH)
               [[ "$height" < 2 ]];
