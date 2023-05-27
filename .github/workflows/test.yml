@@ -43,7 +43,7 @@ jobs:
           ETH_CHAIN_ID: ${{ env.ETH_CHAIN_ID }}
           DEPLOYER_PRIVATE_KEY: ${{ env.DEPLOYER_PRIVATE_KEY }}
           ETH_HTTP_PATH: ${{ env.ETH_HTTP_PATH }}
-        timeout-minutes: 10
+        timeout-minutes: 15
         run: |
           docker compose -f test/compose-deployer.yml up --wait --quiet-pull
           # Start validator at current head, but not before PoS transition
@@ -51,7 +51,10 @@ jobs:
           while
               height=$(./scripts/get-block-number.sh $ETH_HTTP_PATH)
               [[ "$height" < 2 ]];
-          do sleep 1; done
+          do
+              echo "Waiting for head to progress. Current block: $height"
+              sleep 3
+          done
           echo VALIDATE_FROM_HEIGHT=$height >> "$GITHUB_ENV"
       - name: "Run tests"
         env:
@@ -61,3 +64,4 @@ jobs:
           go test -v ./integration/...
       - uses: mxschmitt/action-tmate@v3 # XXX dev
         if: ${{ failure() }}
+        timeout-minutes: 5
