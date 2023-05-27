@@ -48,5 +48,5 @@ jobs:
           ETH_CHAIN_CONFIG: ${{ env.ETH_CHAIN_CONFIG }}
           ETH_HTTP_PATH: ${{ env.ETH_HTTP_PATH }}
         run: |
-          export VALIDATE_FROM_HEIGHT=$(./scripts/get-latest-block $ETH_HTTP_PATH)
+          export VALIDATE_FROM_HEIGHT=$(./scripts/get-latest-block.sh $ETH_HTTP_PATH)
           go test -v ./integration/...
