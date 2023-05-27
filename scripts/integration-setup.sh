@@ -3,6 +3,7 @@
 set -ex
 
 # Prevent conflicting tty output
+export DOCKER_BUILDKIT=1
 export BUILDKIT_PROGRESS=plain
 # By default assume we are running in the project root
 export CERC_REPO_BASE_DIR="${CERC_REPO_BASE_DIR:-..}"
@@ -16,7 +17,7 @@ set -x
 # Build and deploy a cluster with only what we need from the stack
 $laconic_so setup-repositories \
     --exclude cerc-io/ipld-eth-server,cerc-io/tx-spammer \
-    --branches-file ./test/stack-refs.yml
+    --branches-file ./test/stack-refs.txt
 
 $laconic_so build-containers \
     --exclude cerc/ipld-eth-server,cerc/keycloak,cerc/tx-spammer
