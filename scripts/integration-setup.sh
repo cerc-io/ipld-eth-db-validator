@@ -9,7 +9,7 @@ export CERC_REPO_BASE_DIR="${CERC_REPO_BASE_DIR:-..}"
 
 CONFIG_DIR=$(readlink -f "${CONFIG_DIR:-$(mktemp -d)}")
 
-laconic_so="${LACONIC_SO:-laconic-so} --stack fixturenet-eth-loaded"
+laconic_so="${LACONIC_SO:-laconic-so} --stack fixturenet-eth-loaded --quiet"
 
 set -x
 
