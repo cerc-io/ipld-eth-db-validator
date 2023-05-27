@@ -28,9 +28,8 @@ $laconic_so deploy \
 
 set +x
 
-# Get IPv4 endpoint of geth file server
-bootnode_endpoint=$(docker port test-fixturenet-eth-bootnode-geth-1 9898 | head -1)
-geth_endpoint="$(docker port test-fixturenet-eth-geth-1-1 8545 | head -1)"
+bootnode_endpoint=localhost:$(docker port test-fixturenet-eth-bootnode-geth-1 9898 | head -1 | cut -d':' -f2)
+geth_endpoint=localhost:$(docker port test-fixturenet-eth-geth-1-1 8545 | head -1 | cut -d':' -f2)
 
 # Extract the chain config and ID from genesis file
 curl -s $bootnode_endpoint/geth.json | jq '.config' > "$CONFIG_DIR/chain.json"
