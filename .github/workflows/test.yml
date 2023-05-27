@@ -45,10 +45,12 @@ jobs:
           ETH_HTTP_PATH: ${{ env.ETH_HTTP_PATH }}
         run: |
           docker compose -f test/compose-deployer.yml up --wait --quiet-pull
-          while
-            height=$(./scripts/get-block-number.sh $ETH_HTTP_PATH)
-            [[ $latest < 2 ]]
-          do sleep 1; done
+          height=$(./scripts/get-block-number.sh $ETH_HTTP_PATH)
+          [[ $height < 2 ]] && exit 1
+          # while
+          #   height=$(./scripts/get-block-number.sh $ETH_HTTP_PATH)
+          #   [[ $latest < 2 ]]
+          # do sleep 1; done
           echo VALIDATE_FROM_HEIGHT=$height >> "$GITHUB_ENV"
       - name: "Run tests"
         env:
@@ -56,3 +58,5 @@ jobs:
           VALIDATE_FROM_HEIGHT: ${{ env.VALIDATE_FROM_HEIGHT }}
         run: |
           go test -v ./integration/...
+      - uses: mxschmitt/action-tmate@v3 # XXX dev
+        if: ${{ failure() }}
