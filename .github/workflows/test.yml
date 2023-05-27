@@ -44,13 +44,20 @@ jobs:
           DEPLOYER_PRIVATE_KEY: ${{ env.DEPLOYER_PRIVATE_KEY }}
           ETH_HTTP_PATH: ${{ env.ETH_HTTP_PATH }}
         run: |
+          set -x
           docker compose -f test/compose-deployer.yml up --wait --quiet-pull
-          height=$(./scripts/get-block-number.sh $ETH_HTTP_PATH)
-          [[ $height < 2 ]] && exit 1
-          # while
-          #   height=$(./scripts/get-block-number.sh $ETH_HTTP_PATH)
-          #   [[ $latest < 2 ]]
-          # do sleep 1; done
+
+          # height=$(./scripts/get-block-number.sh $ETH_HTTP_PATH)
+          # [[ $height < 2 ]] && exit 1
+
+          export ETH_HTTP_PATH
+          timeout 2m bash -c '
+          set -x
+          while
+              height=$(./scripts/get-block-number.sh $ETH_HTTP_PATH)
+              [[ "$height" < 2 ]];
+          do sleep 1; done
+          '
           echo VALIDATE_FROM_HEIGHT=$height >> "$GITHUB_ENV"
       - name: "Run tests"
         env:
