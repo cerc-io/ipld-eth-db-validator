@@ -40,14 +40,6 @@ geth_endpoint=localhost:$(docker port test-fixturenet-eth-geth-1-1 8545 | head -
 # Extract the chain config and ID from genesis file
 curl -s $bootnode_endpoint/geth.json | jq '.config' > "$CONFIG_DIR/chain.json"
 
-# export PGPASSWORD=password
-# QUERY_BLOCKS_EXIST='SELECT exists(SELECT block_number FROM ipld.blocks LIMIT 1);'
-
-# echo "Waiting until we have some data written..."
-# until [[ "$(psql -qtA cerc_testing -h localhost -U vdbm -p 8077 -c "$QUERY_BLOCKS_EXIST")" = 't' ]]; do
-#     sleep 1
-# done
-
 # Output vars if we are running on Github
 if [[ -n "$GITHUB_ENV" ]]; then
     echo ETH_CHAIN_ID="$(jq '.chainId' $CONFIG_DIR/chain.json)" >> "$GITHUB_ENV"
