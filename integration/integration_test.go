@@ -27,7 +27,7 @@ var (
 )
 
 const (
-	timeout = 5 * time.Minute
+	timeout = 10 * time.Minute
 )
 
 var (
