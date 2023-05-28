@@ -6,12 +6,14 @@ export DOCKER_BUILDKIT=1
 # Prevent conflicting tty output
 export BUILDKIT_PROGRESS=plain
 
+CONFIG_DIR=$(readlink -f "${CONFIG_DIR:-$(mktemp -d)}")
+
 # By default assume we are running in the project root
 export CERC_REPO_BASE_DIR="${CERC_REPO_BASE_DIR:-..}"
 # The default 3s per slot is too fast on github job runners, so increase it
 export CERC_CONTAINER_EXTRA_BUILD_ARGS="-e SECONDS_PER_SLOT=12"
-
-CONFIG_DIR=$(readlink -f "${CONFIG_DIR:-$(mktemp -d)}")
+# v5 migrations only go up to version 18
+echo CERC_STATEDIFF_DB_GOOSE_MIN_VER=18 >> $CONFIG_DIR/stack.env
 
 laconic_so="${LACONIC_SO:-laconic-so} --stack fixturenet-eth-loaded --quiet"
 
@@ -27,6 +29,7 @@ $laconic_so build-containers \
 
 $laconic_so deploy \
     --include fixturenet-eth,ipld-eth-db \
+    --env-file $CONFIG_DIR/stack.env \
     --cluster test up
 
 set +x

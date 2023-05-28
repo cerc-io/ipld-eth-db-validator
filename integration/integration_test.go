@@ -27,7 +27,8 @@ var (
 )
 
 const (
-	timeout = 10 * time.Minute
+	timeout            = 10 * time.Minute
+	progressBufferSize = 200
 )
 
 var (
@@ -76,7 +77,7 @@ func setup(t *testing.T, progressChan chan uint64) {
 }
 
 func TestValidateContracts(t *testing.T) {
-	progressChan := make(chan uint64, 10)
+	progressChan := make(chan uint64, progressBufferSize)
 	setup(t, progressChan)
 
 	contract, err := integration.DeployTestContract()
@@ -86,6 +87,8 @@ func TestValidateContracts(t *testing.T) {
 
 	t.Run("contract deployment", func(t *testing.T) {
 		g := gomega.NewWithT(t)
+		t.Logf("Deployed contract at block %d", contract.BlockNumber)
+
 		g.Expect(progressChan).ToNot(BeClosed())
 		g.Eventually(validated.contains, timeout).WithArguments(contract.BlockNumber).Should(BeTrue())
 	})
@@ -109,7 +112,7 @@ func TestValidateContracts(t *testing.T) {
 }
 
 func TestValidateTransactions(t *testing.T) {
-	progressChan := make(chan uint64, 100)
+	progressChan := make(chan uint64, progressBufferSize)
 	setup(t, progressChan)
 
 	t.Run("ETH transfer transactions", func(t *testing.T) {
