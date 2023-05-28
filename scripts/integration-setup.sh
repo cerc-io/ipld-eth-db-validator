@@ -2,11 +2,14 @@
 
 set -ex
 
-# Prevent conflicting tty output
 export DOCKER_BUILDKIT=1
+# Prevent conflicting tty output
 export BUILDKIT_PROGRESS=plain
+
 # By default assume we are running in the project root
 export CERC_REPO_BASE_DIR="${CERC_REPO_BASE_DIR:-..}"
+# The default 3s per slot is too fast on github job runners, so increase it
+export CERC_CONTAINER_EXTRA_BUILD_ARGS="-e SECONDS_PER_SLOT=12"
 
 CONFIG_DIR=$(readlink -f "${CONFIG_DIR:-$(mktemp -d)}")
 
