@@ -25,7 +25,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/cerc-io/ipld-eth-db-validator/pkg/prom"
+	"github.com/cerc-io/ipld-eth-db-validator/v5/pkg/prom"
 )
 
 var (
