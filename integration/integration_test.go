@@ -33,26 +33,33 @@ const (
 var (
 	ctx = context.Background()
 	wg  sync.WaitGroup
+
+	// Track the blocks validated on this chain
+	lastValidated uint64
+	validated     = newBlockSet()
 )
 
-func setup(t *testing.T, progressChan chan uint64) *atomicBlockSet {
+func setup(t *testing.T, progressChan chan uint64) {
 	cfg, err := validator.NewConfig()
 	if err != nil {
 		t.Fatal(err)
 	}
 	// set the default DB config to the testing defaults
 	cfg.DBConfig, _ = helpers.TestDBConfig.WithEnv()
+	// update the start block if we have already validated past it
+	if lastValidated > cfg.FromBlock {
+		cfg.FromBlock = lastValidated
+	}
 
 	service, err := validator.NewService(cfg, progressChan)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Start tracking validated blocks, so we don't miss any
-	validated := newBlockSet()
 	go func() {
 		for block := range progressChan {
 			validated.add(block)
+			lastValidated = block
 		}
 	}()
 
@@ -66,12 +73,11 @@ func setup(t *testing.T, progressChan chan uint64) *atomicBlockSet {
 		g := gomega.NewWithT(t)
 		g.Expect(progressChan).To(BeClosed())
 	})
-	return validated
 }
 
 func TestValidateContracts(t *testing.T) {
 	progressChan := make(chan uint64, 10)
-	validated := setup(t, progressChan)
+	setup(t, progressChan)
 
 	contract, err := integration.DeployTestContract()
 	if err != nil {
@@ -104,7 +110,7 @@ func TestValidateContracts(t *testing.T) {
 
 func TestValidateTransactions(t *testing.T) {
 	progressChan := make(chan uint64, 100)
-	validated := setup(t, progressChan)
+	setup(t, progressChan)
 
 	t.Run("ETH transfer transactions", func(t *testing.T) {
 		g := gomega.NewWithT(t)
