@@ -104,7 +104,7 @@ func (c *Config) setupEth() error {
 
 func (c *Config) setupValidator() error {
 	var err error
-	c.FromBlock = viper.GetUint64("validate.fromHeight")
+	c.FromBlock = viper.GetUint64("validate.fromBlock")
 	if c.FromBlock < 1 {
 		return fmt.Errorf("starting block height cannot be less than 1")
 	}

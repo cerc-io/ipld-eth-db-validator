@@ -6,7 +6,7 @@
     user     = "vdbm"
 
 [validate]
-    fromHeight = 1
+    fromBlock = 1
     trail = 16
     retryInterval = "10s"
     stateDiffMissingBlock = true

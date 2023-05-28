@@ -55,11 +55,11 @@ jobs:
               echo "Waiting for head to progress. Current block: $height"
               sleep 3
           done
-          echo VALIDATE_FROM_HEIGHT=$height >> "$GITHUB_ENV"
+          echo VALIDATE_FROM_BLOCK=$height >> "$GITHUB_ENV"
       - name: "Run tests"
         env:
           ETH_CHAIN_CONFIG: ${{ env.ETH_CHAIN_CONFIG }}
-          VALIDATE_FROM_HEIGHT: ${{ env.VALIDATE_FROM_HEIGHT }}
+          VALIDATE_FROM_BLOCK: ${{ env.VALIDATE_FROM_BLOCK }}
         run: |
           go test -v ./integration/...
       - uses: mxschmitt/action-tmate@v3 # XXX dev

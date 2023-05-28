@@ -44,7 +44,7 @@ const (
 	ETH_CHAIN_ID     = "ETH_CHAIN_ID"
 	ETH_HTTP_PATH    = "ETH_HTTP_PATH"
 
-	VALIDATE_FROM_HEIGHT             = "VALIDATE_FROM_HEIGHT"
+	VALIDATE_FROM_BLOCK              = "VALIDATE_FROM_BLOCK"
 	VALIDATE_TRAIL                   = "VALIDATE_TRAIL"
 	VALIDATE_RETRY_INTERVAL          = "VALIDATE_RETRY_INTERVAL"
 	VALIDATE_STATEDIFF_MISSING_BLOCK = "VALIDATE_STATEDIFF_MISSING_BLOCK"
@@ -76,7 +76,7 @@ func init() {
 	viper.BindEnv("ethereum.chainID", ETH_CHAIN_ID)
 	viper.BindEnv("ethereum.httpPath", ETH_HTTP_PATH)
 
-	viper.BindEnv("validate.fromHeight", VALIDATE_FROM_HEIGHT)
+	viper.BindEnv("validate.fromBlock", VALIDATE_FROM_BLOCK)
 	viper.BindEnv("validate.trail", VALIDATE_TRAIL)
 	viper.BindEnv("validate.retryInterval", VALIDATE_RETRY_INTERVAL)
 	viper.BindEnv("validate.stateDiffMissingBlock", VALIDATE_STATEDIFF_MISSING_BLOCK)
