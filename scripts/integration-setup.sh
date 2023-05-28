@@ -21,7 +21,7 @@ set -x
 
 # Build and deploy a cluster with only what we need from the stack
 $laconic_so setup-repositories \
-    --exclude cerc-io/ipld-eth-server,cerc-io/tx-spammer \
+    --exclude github.com/cerc-io/ipld-eth-server,github.com/cerc-io/tx-spammer \
     --branches-file ./test/stack-refs.txt
 
 $laconic_so build-containers \

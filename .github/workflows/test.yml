@@ -29,11 +29,10 @@ jobs:
           go-version-file: 'go.mod'
           check-latest: true
       - name: "Install stack-orchestrator"
-        # FIXME: using my dev branch for v5 migration changes until a release has them
         uses: actions/checkout@v3
         with:
           repository: cerc-io/stack-orchestrator
-          ref: roy/for-ci
+          ref: v1.1.0-ff616db-202305310811 # first tag with merged changes for this stack
           path: ./stack-orchestrator
       - run: pip install ./stack-orchestrator
       - name: "Run testnet stack"
