@@ -60,6 +60,3 @@ jobs:
           VALIDATE_FROM_BLOCK: ${{ env.VALIDATE_FROM_BLOCK }}
         run: |
           go test -v ./integration/...
-      - uses: mxschmitt/action-tmate@v3 # XXX dev
-        if: ${{ failure() }}
-        timeout-minutes: 5
