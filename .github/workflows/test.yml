@@ -48,13 +48,11 @@ jobs:
           docker compose -f test/compose-deployer.yml up --wait --quiet-pull
           # Start validator at current head, but not before PoS transition
           # (test chain Merge is at block 1)
+          echo "Waiting for chain head to progress..."
           while
               height=$(./scripts/get-block-number.sh $ETH_HTTP_PATH)
               [[ "$height" < 2 ]];
-          do
-              echo "Waiting for head to progress. Current block: $height"
-              sleep 3
-          done
+          do sleep 5; done
           echo VALIDATE_FROM_BLOCK=$height >> "$GITHUB_ENV"
       - name: "Run tests"
         env:
