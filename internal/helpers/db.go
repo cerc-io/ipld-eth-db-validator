@@ -26,16 +26,16 @@ func TearDownDB(db *sqlx.DB) error {
 		return err
 	}
 	statements := []string{
-		`DELETE FROM nodes`,
-		`DELETE FROM ipld.blocks`,
-		`DELETE FROM eth.header_cids`,
-		`DELETE FROM eth.uncle_cids`,
-		`DELETE FROM eth.transaction_cids`,
-		`DELETE FROM eth.receipt_cids`,
-		`DELETE FROM eth.state_cids`,
-		`DELETE FROM eth.storage_cids`,
-		`DELETE FROM eth.log_cids`,
-		`DELETE FROM eth_meta.watched_addresses`,
+		`TRUNCATE nodes`,
+		`TRUNCATE ipld.blocks`,
+		`TRUNCATE eth.header_cids`,
+		`TRUNCATE eth.uncle_cids`,
+		`TRUNCATE eth.transaction_cids`,
+		`TRUNCATE eth.receipt_cids`,
+		`TRUNCATE eth.state_cids`,
+		`TRUNCATE eth.storage_cids`,
+		`TRUNCATE eth.log_cids`,
+		`TRUNCATE eth_meta.watched_addresses`,
 	}
 	for _, stm := range statements {
 		if _, err = tx.Exec(stm); err != nil {
