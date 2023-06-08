@@ -29,7 +29,7 @@ An example config file:
   # block height to initiate database validation at
   fromBlock = 1      # VALIDATE_FROM_BLOCK  (default: 1)
   # number of blocks to trail behind the head
-  trail  = 16         # VALIDATE_TRAIL  (default: 16)
+  trail = 64         # VALIDATE_TRAIL  (default: 64)
   # retry interval after validator has caught up to (head-trail) height (in sec)
   retryInterval = 10  # VALIDATE_RETRY_INTERVAL (default: 10)
 

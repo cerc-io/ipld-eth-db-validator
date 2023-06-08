@@ -7,7 +7,7 @@
 
 [validate]
     fromBlock = 1
-    trail = 16
+    trail = 64
     retryInterval = "10s"
     stateDiffMissingBlock = true
     stateDiffTimeout = "240s"
