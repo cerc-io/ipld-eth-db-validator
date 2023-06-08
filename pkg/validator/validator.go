@@ -166,7 +166,9 @@ func (s *Service) Validate(ctx context.Context, api *ipldeth.PublicEthAPI, idxBl
 	}
 	log.Infof("state root verified for block %d", idxBlockNum)
 
-	err = ValidateReferentialIntegrity(s.db, idxBlockNum)
+	tx := s.db.MustBegin()
+	defer tx.Rollback()
+	err = ValidateReferentialIntegrity(tx, idxBlockNum)
 	if err != nil {
 		log.Errorf("failed to verify referential integrity at block %d", idxBlockNum)
 		return err

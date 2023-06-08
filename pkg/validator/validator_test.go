@@ -120,7 +120,9 @@ func TestStateValidation(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			err = validator.ValidateReferentialIntegrity(db, i)
+			tx := db.MustBegin()
+			defer tx.Rollback()
+			err = validator.ValidateReferentialIntegrity(tx, i)
 			if err != nil {
 				t.Fatal(err)
 			}

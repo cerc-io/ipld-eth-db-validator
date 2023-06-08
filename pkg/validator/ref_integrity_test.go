@@ -27,6 +27,7 @@ func TestRefIntegrity(t *testing.T) {
 var _ = Describe("referential integrity", func() {
 	var (
 		db           *sqlx.DB
+		tx           *sqlx.Tx
 		checkedBlock *types.Block // Generated block of interest
 	)
 	BeforeEach(func() {
@@ -65,21 +66,25 @@ var _ = Describe("referential integrity", func() {
 		checkedBlock = blocks[5]
 
 		db = helpers.SetupDB()
+		tx = db.MustBegin()
 	})
 
-	AfterEach(func() { helpers.TearDownDB(db) })
+	AfterEach(func() {
+		tx.Rollback()
+		helpers.TearDownDB(db)
+	})
 
 	Describe("ValidateHeaderCIDsRef", func() {
 		It("Validates referential integrity of header_cids table", func() {
-			err := validator.ValidateHeaderCIDsRef(db, checkedBlock.NumberU64())
+			err := validator.ValidateHeaderCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("Throws an error if corresponding header IPFS block entry not found", func() {
-			err := deleteEntriesFrom(db, "ipld.blocks")
+			err := deleteEntriesFrom(tx, "ipld.blocks")
 			Expect(err).ToNot(HaveOccurred())
 
-			err = validator.ValidateHeaderCIDsRef(db, checkedBlock.NumberU64())
+			err = validator.ValidateHeaderCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(validator.EntryNotFoundErr, "ipld.blocks"))
 		})
@@ -87,24 +92,24 @@ var _ = Describe("referential integrity", func() {
 
 	Describe("ValidateUncleCIDsRef", func() {
 		It("Validates referential integrity of uncle_cids table", func() {
-			err := validator.ValidateUncleCIDsRef(db, checkedBlock.NumberU64())
+			err := validator.ValidateUncleCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("Throws an error if corresponding header_cid entry not found", func() {
-			err := deleteEntriesFrom(db, "eth.header_cids")
+			err := deleteEntriesFrom(tx, "eth.header_cids")
 			Expect(err).ToNot(HaveOccurred())
 
-			err = validator.ValidateUncleCIDsRef(db, checkedBlock.NumberU64())
+			err = validator.ValidateUncleCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(validator.EntryNotFoundErr, "eth.header_cids"))
 		})
 
 		It("Throws an error if corresponding uncle IPFS block entry not found", func() {
-			err := deleteEntriesFrom(db, "ipld.blocks")
+			err := deleteEntriesFrom(tx, "ipld.blocks")
 			Expect(err).ToNot(HaveOccurred())
 
-			err = validator.ValidateUncleCIDsRef(db, checkedBlock.NumberU64())
+			err = validator.ValidateUncleCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(validator.EntryNotFoundErr, "ipld.blocks"))
 		})
@@ -112,24 +117,24 @@ var _ = Describe("referential integrity", func() {
 
 	Describe("ValidateTransactionCIDsRef", func() {
 		It("Validates referential integrity of transaction_cids table", func() {
-			err := validator.ValidateTransactionCIDsRef(db, checkedBlock.NumberU64())
+			err := validator.ValidateTransactionCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("Throws an error if corresponding header_cid entry not found", func() {
-			err := deleteEntriesFrom(db, "eth.header_cids")
+			err := deleteEntriesFrom(tx, "eth.header_cids")
 			Expect(err).ToNot(HaveOccurred())
 
-			err = validator.ValidateTransactionCIDsRef(db, checkedBlock.NumberU64())
+			err = validator.ValidateTransactionCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(validator.EntryNotFoundErr, "eth.header_cids"))
 		})
 
 		It("Throws an error if corresponding transaction IPFS block entry not found", func() {
-			err := deleteEntriesFrom(db, "ipld.blocks")
+			err := deleteEntriesFrom(tx, "ipld.blocks")
 			Expect(err).ToNot(HaveOccurred())
 
-			err = validator.ValidateTransactionCIDsRef(db, checkedBlock.NumberU64())
+			err = validator.ValidateTransactionCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(validator.EntryNotFoundErr, "ipld.blocks"))
 		})
@@ -137,24 +142,24 @@ var _ = Describe("referential integrity", func() {
 
 	Describe("ValidateReceiptCIDsRef", func() {
 		It("Validates referential integrity of receipt_cids table", func() {
-			err := validator.ValidateReceiptCIDsRef(db, checkedBlock.NumberU64())
+			err := validator.ValidateReceiptCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("Throws an error if corresponding transaction_cids entry not found", func() {
-			err := deleteEntriesFrom(db, "eth.transaction_cids")
+			err := deleteEntriesFrom(tx, "eth.transaction_cids")
 			Expect(err).ToNot(HaveOccurred())
 
-			err = validator.ValidateReceiptCIDsRef(db, checkedBlock.NumberU64())
+			err = validator.ValidateReceiptCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(validator.EntryNotFoundErr, "eth.transaction_cids"))
 		})
 
 		It("Throws an error if corresponding receipt IPFS block entry not found", func() {
-			err := deleteEntriesFrom(db, "ipld.blocks")
+			err := deleteEntriesFrom(tx, "ipld.blocks")
 			Expect(err).ToNot(HaveOccurred())
 
-			err = validator.ValidateReceiptCIDsRef(db, checkedBlock.NumberU64())
+			err = validator.ValidateReceiptCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(validator.EntryNotFoundErr, "ipld.blocks"))
 		})
@@ -162,24 +167,24 @@ var _ = Describe("referential integrity", func() {
 
 	Describe("ValidateStateCIDsRef", func() {
 		It("Validates referential integrity of state_cids table", func() {
-			err := validator.ValidateStateCIDsRef(db, checkedBlock.NumberU64())
+			err := validator.ValidateStateCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("Throws an error if corresponding header_cids entry not found", func() {
-			err := deleteEntriesFrom(db, "eth.header_cids")
+			err := deleteEntriesFrom(tx, "eth.header_cids")
 			Expect(err).ToNot(HaveOccurred())
 
-			err = validator.ValidateStateCIDsRef(db, checkedBlock.NumberU64())
+			err = validator.ValidateStateCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(validator.EntryNotFoundErr, "eth.header_cids"))
 		})
 
 		It("Throws an error if corresponding state IPFS block entry not found", func() {
-			err := deleteEntriesFrom(db, "ipld.blocks")
+			err := deleteEntriesFrom(tx, "ipld.blocks")
 			Expect(err).ToNot(HaveOccurred())
 
-			err = validator.ValidateStateCIDsRef(db, checkedBlock.NumberU64())
+			err = validator.ValidateStateCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(validator.EntryNotFoundErr, "ipld.blocks"))
 		})
@@ -187,24 +192,24 @@ var _ = Describe("referential integrity", func() {
 
 	Describe("ValidateStorageCIDsRef", func() {
 		It("Validates referential integrity of storage_cids table", func() {
-			err := validator.ValidateStorageCIDsRef(db, checkedBlock.NumberU64())
+			err := validator.ValidateStorageCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("Throws an error if corresponding state_cids entry not found", func() {
-			err := deleteEntriesFrom(db, "eth.state_cids")
+			err := deleteEntriesFrom(tx, "eth.state_cids")
 			Expect(err).ToNot(HaveOccurred())
 
-			err = validator.ValidateStorageCIDsRef(db, checkedBlock.NumberU64())
+			err = validator.ValidateStorageCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(validator.EntryNotFoundErr, "eth.state_cids"))
 		})
 
 		It("Throws an error if corresponding storage IPFS block entry not found", func() {
-			err := deleteEntriesFrom(db, "ipld.blocks")
+			err := deleteEntriesFrom(tx, "ipld.blocks")
 			Expect(err).ToNot(HaveOccurred())
 
-			err = validator.ValidateStorageCIDsRef(db, checkedBlock.NumberU64())
+			err = validator.ValidateStorageCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(validator.EntryNotFoundErr, "ipld.blocks"))
 		})
@@ -212,24 +217,24 @@ var _ = Describe("referential integrity", func() {
 
 	Describe("ValidateLogCIDsRef", func() {
 		It("Validates referential integrity of log_cids table", func() {
-			err := validator.ValidateLogCIDsRef(db, checkedBlock.NumberU64())
+			err := validator.ValidateLogCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("Throws an error if corresponding receipt_cids entry not found", func() {
-			err := deleteEntriesFrom(db, "eth.receipt_cids")
+			err := deleteEntriesFrom(tx, "eth.receipt_cids")
 			Expect(err).ToNot(HaveOccurred())
 
-			err = validator.ValidateLogCIDsRef(db, checkedBlock.NumberU64())
+			err = validator.ValidateLogCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(validator.EntryNotFoundErr, "eth.receipt_cids"))
 		})
 
 		It("Throws an error if corresponding log IPFS block entry not found", func() {
-			err := deleteEntriesFrom(db, "ipld.blocks")
+			err := deleteEntriesFrom(tx, "ipld.blocks")
 			Expect(err).ToNot(HaveOccurred())
 
-			err = validator.ValidateLogCIDsRef(db, checkedBlock.NumberU64())
+			err = validator.ValidateLogCIDsRef(tx, checkedBlock.NumberU64())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(validator.EntryNotFoundErr, "ipld.blocks"))
 		})
@@ -237,8 +242,8 @@ var _ = Describe("referential integrity", func() {
 
 })
 
-func deleteEntriesFrom(db *sqlx.DB, tableName string) error {
+func deleteEntriesFrom(tx *sqlx.Tx, tableName string) error {
 	pgStr := "TRUNCATE %s"
-	_, err := db.Exec(fmt.Sprintf(pgStr, tableName))
+	_, err := tx.Exec(fmt.Sprintf(pgStr, tableName))
 	return err
 }
