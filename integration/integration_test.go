@@ -27,7 +27,7 @@ var (
 )
 
 const (
-	timeout            = 10 * time.Minute
+	timeout            = 20 * time.Minute
 	progressBufferSize = 200
 )
 

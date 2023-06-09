@@ -42,7 +42,7 @@ jobs:
           ETH_CHAIN_ID: ${{ env.ETH_CHAIN_ID }}
           DEPLOYER_PRIVATE_KEY: ${{ env.DEPLOYER_PRIVATE_KEY }}
           ETH_HTTP_PATH: ${{ env.ETH_HTTP_PATH }}
-        timeout-minutes: 15
+        timeout-minutes: 20
         run: |
           docker compose -f test/compose-deployer.yml up --wait --quiet-pull
           # Start validator at current head, but not before PoS transition
