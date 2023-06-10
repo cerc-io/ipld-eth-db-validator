@@ -16,6 +16,12 @@ import (
 	"github.com/cerc-io/ipld-eth-db-validator/v5/pkg/validator"
 )
 
+const (
+	timeout            = 20 * time.Minute
+	pollInterval       = time.Second
+	progressBufferSize = 200
+)
+
 var (
 	testAddresses = []string{
 		"0x1111111111111111111111111111111111111112",
@@ -24,21 +30,19 @@ var (
 		"0xF7C7AEaECD2349b129d5d15790241c32eeE4607B",
 		"0x992b6E9BFCA1F7b0797Cee10b0170E536EAd3532",
 	}
-)
-
-const (
-	timeout            = 20 * time.Minute
-	progressBufferSize = 200
-)
-
-var (
-	ctx = context.Background()
-	wg  sync.WaitGroup
 
 	// Track the blocks validated on this chain
 	lastValidated uint64
 	validated     = newBlockSet()
+
+	ctx = context.Background()
+	wg  sync.WaitGroup
 )
+
+func init() {
+	gomega.SetDefaultEventuallyTimeout(timeout)
+	gomega.SetDefaultEventuallyPollingInterval(pollInterval)
+}
 
 func setup(t *testing.T, progressChan chan uint64) {
 	cfg, err := validator.NewConfig()
