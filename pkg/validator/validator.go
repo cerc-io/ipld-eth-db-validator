@@ -100,9 +100,10 @@ func (s *Service) Start(ctx context.Context, wg *sync.WaitGroup) {
 		return
 	}
 
-	idxBlockNum := s.blockNum
+	nextBlockNum := s.blockNum
 	var delay time.Duration
 	for {
+		log.Debug("delaying %s", delay)
 		select {
 		case <-s.quitChan:
 			log.Info("stopping ipld-eth-db-validator process")
@@ -114,7 +115,7 @@ func (s *Service) Start(ctx context.Context, wg *sync.WaitGroup) {
 			}
 			return
 		case <-time.After(delay):
-			err := s.Validate(ctx, api, idxBlockNum)
+			err := s.Validate(ctx, api, nextBlockNum)
 			// If chain is not synced, wait for trail to catch up before trying again
 			if err, ok := err.(*ChainNotSyncedError); ok {
 				log.Debugf("waiting for chain to advance, head is at block %d", err.Head)
@@ -125,8 +126,8 @@ func (s *Service) Start(ctx context.Context, wg *sync.WaitGroup) {
 				log.Fatal(err)
 				return
 			}
-			prom.SetLastValidatedBlock(float64(idxBlockNum))
-			idxBlockNum++
+			prom.SetLastValidatedBlock(float64(nextBlockNum))
+			nextBlockNum++
 		}
 	}
 }

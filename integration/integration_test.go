@@ -9,8 +9,7 @@ import (
 	"github.com/onsi/gomega"
 	. "github.com/onsi/gomega"
 
-	// imported to register env vars with viper
-	_ "github.com/cerc-io/ipld-eth-db-validator/v5/cmd"
+	"github.com/cerc-io/ipld-eth-db-validator/v5/cmd" // this registers env vars with viper
 	"github.com/cerc-io/ipld-eth-db-validator/v5/integration"
 	"github.com/cerc-io/ipld-eth-db-validator/v5/internal/helpers"
 	"github.com/cerc-io/ipld-eth-db-validator/v5/pkg/validator"
@@ -40,6 +39,7 @@ var (
 )
 
 func init() {
+	cmd.ParseLogFlags()
 	gomega.SetDefaultEventuallyTimeout(timeout)
 	gomega.SetDefaultEventuallyPollingInterval(pollInterval)
 }
