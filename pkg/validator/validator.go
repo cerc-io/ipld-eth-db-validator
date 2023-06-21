@@ -103,7 +103,6 @@ func (s *Service) Start(ctx context.Context, wg *sync.WaitGroup) {
 	nextBlockNum := s.blockNum
 	var delay time.Duration
 	for {
-		log.Debug("delaying %s", delay)
 		select {
 		case <-s.quitChan:
 			log.Info("stopping ipld-eth-db-validator process")
@@ -117,9 +116,10 @@ func (s *Service) Start(ctx context.Context, wg *sync.WaitGroup) {
 		case <-time.After(delay):
 			err := s.Validate(ctx, api, nextBlockNum)
 			// If chain is not synced, wait for trail to catch up before trying again
-			if err, ok := err.(*ChainNotSyncedError); ok {
-				log.Debugf("waiting for chain to advance, head is at block %d", err.Head)
+			if notsynced, ok := err.(*ChainNotSyncedError); ok {
 				delay = s.retryInterval
+				log.Infof("waiting %v for chain to advance to block %d (head is at %d)",
+					delay, nextBlockNum+s.trail, notsynced.Head)
 				continue
 			}
 			if err != nil {
@@ -128,6 +128,7 @@ func (s *Service) Start(ctx context.Context, wg *sync.WaitGroup) {
 			}
 			prom.SetLastValidatedBlock(float64(nextBlockNum))
 			nextBlockNum++
+			delay = 0
 		}
 	}
 }
@@ -145,7 +146,7 @@ func (s *Service) Validate(ctx context.Context, api *ipldeth.PublicEthAPI, idxBl
 	}
 
 	// Check if block at requested height can be validated
-	if idxBlockNum > headBlockNum-s.trail {
+	if idxBlockNum+s.trail > headBlockNum {
 		return &ChainNotSyncedError{headBlockNum}
 	}
 

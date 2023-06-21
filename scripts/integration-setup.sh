@@ -42,3 +42,11 @@ if [[ -n "$GITHUB_ENV" ]]; then
     # Read a private key so we can send from a funded account
     echo DEPLOYER_PRIVATE_KEY="$(curl -s $bootnode_endpoint/accounts.csv | head -1 | cut -d',' -f3)" >> "$GITHUB_ENV"
 fi
+
+export PGPASSWORD=password
+query_blocks_exist='SELECT exists(SELECT block_number FROM ipld.blocks LIMIT 1);'
+
+echo "Waiting until we have some data written..."
+until [[ "$(psql -qtA cerc_testing -h localhost -U vdbm -p 8077 -c "$query_blocks_exist")" = 't' ]]; do
+    sleep 2
+done
