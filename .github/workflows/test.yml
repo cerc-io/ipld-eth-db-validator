@@ -45,14 +45,19 @@ jobs:
         timeout-minutes: 20
         run: |
           docker compose -f test/compose-deployer.yml up --wait --quiet-pull
-          # Start validator at current head, but not before PoS transition
-          # (test chain Merge is at block 1)
-          echo "Waiting for chain head to progress..."
+      - name: "Build package and wait for testnet"
+        run: |
+          go build ./... &
+          # Start validator at current head, but not before Merge (block 1 on test chain)
           while
               height=$(./scripts/get-block-number.sh $ETH_HTTP_PATH)
               [[ "$height" < 2 ]];
-          do sleep 5; done
+          do
+            echo "Waiting for chain head to progress..."
+            sleep 5
+          done
           echo VALIDATE_FROM_BLOCK=$height >> "$GITHUB_ENV"
+          wait $!
       - name: "Run tests"
         env:
           ETH_CHAIN_CONFIG: ${{ env.ETH_CHAIN_CONFIG }}
