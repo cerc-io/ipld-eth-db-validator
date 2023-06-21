@@ -55,6 +55,8 @@ func setup(t *testing.T, progressChan chan uint64) {
 	if lastValidated > cfg.FromBlock {
 		cfg.FromBlock = lastValidated
 	}
+	// default trail is unnecessarily long
+	cfg.Trail = 16
 
 	service, err := validator.NewService(cfg, progressChan)
 	if err != nil {
