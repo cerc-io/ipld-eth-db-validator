@@ -16,7 +16,7 @@
 
 package main
 
-import "github.com/cerc-io/ipld-eth-db-validator/cmd"
+import "github.com/cerc-io/ipld-eth-db-validator/v5/cmd"
 
 func main() {
 	cmd.Execute()

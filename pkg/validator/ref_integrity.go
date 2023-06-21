@@ -22,49 +22,44 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+var (
+	ReferentialIntegrityErr = "referential integrity check failed at block %d, entry for %s not found"
+	EntryNotFoundErr        = "entry for %s not found"
+)
+
 // ValidateReferentialIntegrity validates referential integrity at the given height
-func ValidateReferentialIntegrity(db *sqlx.DB, blockNumber uint64) error {
-	err := ValidateHeaderCIDsRef(db, blockNumber)
+func ValidateReferentialIntegrity(tx *sqlx.Tx, blockNumber uint64) error {
+	err := ValidateHeaderCIDsRef(tx, blockNumber)
 	if err != nil {
 		return err
 	}
 
-	err = ValidateUncleCIDsRef(db, blockNumber)
+	err = ValidateUncleCIDsRef(tx, blockNumber)
 	if err != nil {
 		return err
 	}
 
-	err = ValidateTransactionCIDsRef(db, blockNumber)
+	err = ValidateTransactionCIDsRef(tx, blockNumber)
 	if err != nil {
 		return err
 	}
 
-	err = ValidateReceiptCIDsRef(db, blockNumber)
+	err = ValidateReceiptCIDsRef(tx, blockNumber)
 	if err != nil {
 		return err
 	}
 
-	err = ValidateStateCIDsRef(db, blockNumber)
+	err = ValidateStateCIDsRef(tx, blockNumber)
 	if err != nil {
 		return err
 	}
 
-	err = ValidateStorageCIDsRef(db, blockNumber)
+	err = ValidateStorageCIDsRef(tx, blockNumber)
 	if err != nil {
 		return err
 	}
 
-	err = ValidateStateAccountsRef(db, blockNumber)
-	if err != nil {
-		return err
-	}
-
-	err = ValidateAccessListElementsRef(db, blockNumber)
-	if err != nil {
-		return err
-	}
-
-	err = ValidateLogCIDsRef(db, blockNumber)
+	err = ValidateLogCIDsRef(tx, blockNumber)
 	if err != nil {
 		return err
 	}
@@ -73,8 +68,8 @@ func ValidateReferentialIntegrity(db *sqlx.DB, blockNumber uint64) error {
 }
 
 // ValidateHeaderCIDsRef does a reference integrity check on references in eth.header_cids table
-func ValidateHeaderCIDsRef(db *sqlx.DB, blockNumber uint64) error {
-	err := ValidateIPFSBlocks(db, blockNumber, "eth.header_cids", "mh_key")
+func ValidateHeaderCIDsRef(tx *sqlx.Tx, blockNumber uint64) error {
+	err := ValidateIPFSBlocks(tx, blockNumber, "eth.header_cids", "cid")
 	if err != nil {
 		return err
 	}
@@ -83,9 +78,9 @@ func ValidateHeaderCIDsRef(db *sqlx.DB, blockNumber uint64) error {
 }
 
 // ValidateUncleCIDsRef does a reference integrity check on references in eth.uncle_cids table
-func ValidateUncleCIDsRef(db *sqlx.DB, blockNumber uint64) error {
+func ValidateUncleCIDsRef(tx *sqlx.Tx, blockNumber uint64) error {
 	var exists bool
-	err := db.Get(&exists, UncleCIDsRefHeaderCIDs, blockNumber)
+	err := tx.Get(&exists, UncleCIDsRefHeaderCIDs, blockNumber)
 	if err != nil {
 		return err
 	}
@@ -93,7 +88,7 @@ func ValidateUncleCIDsRef(db *sqlx.DB, blockNumber uint64) error {
 		return fmt.Errorf(ReferentialIntegrityErr, blockNumber, "eth.header_cids")
 	}
 
-	err = ValidateIPFSBlocks(db, blockNumber, "eth.uncle_cids", "mh_key")
+	err = ValidateIPFSBlocks(tx, blockNumber, "eth.uncle_cids", "cid")
 	if err != nil {
 		return err
 	}
@@ -102,9 +97,9 @@ func ValidateUncleCIDsRef(db *sqlx.DB, blockNumber uint64) error {
 }
 
 // ValidateTransactionCIDsRef does a reference integrity check on references in eth.header_cids table
-func ValidateTransactionCIDsRef(db *sqlx.DB, blockNumber uint64) error {
+func ValidateTransactionCIDsRef(tx *sqlx.Tx, blockNumber uint64) error {
 	var exists bool
-	err := db.Get(&exists, TransactionCIDsRefHeaderCIDs, blockNumber)
+	err := tx.Get(&exists, TransactionCIDsRefHeaderCIDs, blockNumber)
 	if err != nil {
 		return err
 	}
@@ -112,7 +107,7 @@ func ValidateTransactionCIDsRef(db *sqlx.DB, blockNumber uint64) error {
 		return fmt.Errorf(ReferentialIntegrityErr, blockNumber, "eth.header_cids")
 	}
 
-	err = ValidateIPFSBlocks(db, blockNumber, "eth.transaction_cids", "mh_key")
+	err = ValidateIPFSBlocks(tx, blockNumber, "eth.transaction_cids", "cid")
 	if err != nil {
 		return err
 	}
@@ -121,9 +116,9 @@ func ValidateTransactionCIDsRef(db *sqlx.DB, blockNumber uint64) error {
 }
 
 // ValidateReceiptCIDsRef does a reference integrity check on references in eth.receipt_cids table
-func ValidateReceiptCIDsRef(db *sqlx.DB, blockNumber uint64) error {
+func ValidateReceiptCIDsRef(tx *sqlx.Tx, blockNumber uint64) error {
 	var exists bool
-	err := db.Get(&exists, ReceiptCIDsRefTransactionCIDs, blockNumber)
+	err := tx.Get(&exists, ReceiptCIDsRefTransactionCIDs, blockNumber)
 	if err != nil {
 		return err
 	}
@@ -131,7 +126,7 @@ func ValidateReceiptCIDsRef(db *sqlx.DB, blockNumber uint64) error {
 		return fmt.Errorf(ReferentialIntegrityErr, blockNumber, "eth.transaction_cids")
 	}
 
-	err = ValidateIPFSBlocks(db, blockNumber, "eth.receipt_cids", "leaf_mh_key")
+	err = ValidateIPFSBlocks(tx, blockNumber, "eth.receipt_cids", "cid")
 	if err != nil {
 		return err
 	}
@@ -140,9 +135,9 @@ func ValidateReceiptCIDsRef(db *sqlx.DB, blockNumber uint64) error {
 }
 
 // ValidateStateCIDsRef does a reference integrity check on references in eth.state_cids table
-func ValidateStateCIDsRef(db *sqlx.DB, blockNumber uint64) error {
+func ValidateStateCIDsRef(tx *sqlx.Tx, blockNumber uint64) error {
 	var exists bool
-	err := db.Get(&exists, StateCIDsRefHeaderCIDs, blockNumber)
+	err := tx.Get(&exists, StateCIDsRefHeaderCIDs, blockNumber)
 	if err != nil {
 		return err
 	}
@@ -150,7 +145,7 @@ func ValidateStateCIDsRef(db *sqlx.DB, blockNumber uint64) error {
 		return fmt.Errorf(ReferentialIntegrityErr, blockNumber, "eth.header_cids")
 	}
 
-	err = ValidateIPFSBlocks(db, blockNumber, "eth.state_cids", "mh_key")
+	err = ValidateIPFSBlocks(tx, blockNumber, "eth.state_cids", "cid")
 	if err != nil {
 		return err
 	}
@@ -159,9 +154,9 @@ func ValidateStateCIDsRef(db *sqlx.DB, blockNumber uint64) error {
 }
 
 // ValidateStorageCIDsRef does a reference integrity check on references in eth.storage_cids table
-func ValidateStorageCIDsRef(db *sqlx.DB, blockNumber uint64) error {
+func ValidateStorageCIDsRef(tx *sqlx.Tx, blockNumber uint64) error {
 	var exists bool
-	err := db.Get(&exists, StorageCIDsRefStateCIDs, blockNumber)
+	err := tx.Get(&exists, StorageCIDsRefStateCIDs, blockNumber)
 	if err != nil {
 		return err
 	}
@@ -169,46 +164,18 @@ func ValidateStorageCIDsRef(db *sqlx.DB, blockNumber uint64) error {
 		return fmt.Errorf(ReferentialIntegrityErr, blockNumber, "eth.state_cids")
 	}
 
-	err = ValidateIPFSBlocks(db, blockNumber, "eth.storage_cids", "mh_key")
+	err = ValidateIPFSBlocks(tx, blockNumber, "eth.storage_cids", "cid")
 	if err != nil {
 		return err
-	}
-
-	return nil
-}
-
-// ValidateStateAccountsRef does a reference integrity check on references in eth.state_accounts table
-func ValidateStateAccountsRef(db *sqlx.DB, blockNumber uint64) error {
-	var exists bool
-	err := db.Get(&exists, StateAccountsRefStateCIDs, blockNumber)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return fmt.Errorf(ReferentialIntegrityErr, blockNumber, "eth.state_cids")
-	}
-
-	return nil
-}
-
-// ValidateAccessListElementsRef does a reference integrity check on references in eth.access_list_elements table
-func ValidateAccessListElementsRef(db *sqlx.DB, blockNumber uint64) error {
-	var exists bool
-	err := db.Get(&exists, AccessListElementsRefTransactionCIDs, blockNumber)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return fmt.Errorf(ReferentialIntegrityErr, blockNumber, "eth.transaction_cids")
 	}
 
 	return nil
 }
 
 // ValidateLogCIDsRef does a reference integrity check on references in eth.log_cids table
-func ValidateLogCIDsRef(db *sqlx.DB, blockNumber uint64) error {
+func ValidateLogCIDsRef(tx *sqlx.Tx, blockNumber uint64) error {
 	var exists bool
-	err := db.Get(&exists, LogCIDsRefReceiptCIDs, blockNumber)
+	err := tx.Get(&exists, LogCIDsRefReceiptCIDs, blockNumber)
 	if err != nil {
 		return err
 	}
@@ -216,7 +183,7 @@ func ValidateLogCIDsRef(db *sqlx.DB, blockNumber uint64) error {
 		return fmt.Errorf(ReferentialIntegrityErr, blockNumber, "eth.receipt_cids")
 	}
 
-	err = ValidateIPFSBlocks(db, blockNumber, "eth.log_cids", "leaf_mh_key")
+	err = ValidateIPFSBlocks(tx, blockNumber, "eth.log_cids", "cid")
 	if err != nil {
 		return err
 	}
@@ -225,14 +192,14 @@ func ValidateLogCIDsRef(db *sqlx.DB, blockNumber uint64) error {
 }
 
 // ValidateIPFSBlocks does a reference integrity check between the given CID table and IPFS blocks table on MHKey and block number
-func ValidateIPFSBlocks(db *sqlx.DB, blockNumber uint64, CIDTable string, mhKeyField string) error {
+func ValidateIPFSBlocks(tx *sqlx.Tx, blockNumber uint64, CIDTable string, CIDField string) error {
 	var exists bool
-	err := db.Get(&exists, fmt.Sprintf(CIDsRefIPLDBlocks, CIDTable, mhKeyField), blockNumber)
+	err := tx.Get(&exists, fmt.Sprintf(CIDsRefIPLDBlocks, CIDTable, CIDField), blockNumber)
 	if err != nil {
 		return err
 	}
 	if exists {
-		return fmt.Errorf(ReferentialIntegrityErr, blockNumber, "public.blocks")
+		return fmt.Errorf(ReferentialIntegrityErr, blockNumber, "ipld.blocks")
 	}
 
 	return nil

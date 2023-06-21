@@ -27,7 +27,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/cerc-io/ipld-eth-db-validator/pkg/validator"
+	"github.com/cerc-io/ipld-eth-db-validator/v5/pkg/validator"
 )
 
 // stateValidatorCmd represents the stateValidator command
@@ -49,7 +49,10 @@ func stateValidator() {
 		logWithCommand.Fatal(err)
 	}
 
-	service := validator.NewService(cfg, nil)
+	service, err := validator.NewService(cfg, nil)
+	if err != nil {
+		logWithCommand.Fatal(err)
+	}
 
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
@@ -65,19 +68,19 @@ func stateValidator() {
 func init() {
 	rootCmd.AddCommand(stateValidatorCmd)
 
-	stateValidatorCmd.PersistentFlags().String("block-height", "1", "block height to initiate state validation")
-	stateValidatorCmd.PersistentFlags().String("trail", "16", "trail of block height to validate")
-	stateValidatorCmd.PersistentFlags().String("sleep-interval", "10", "sleep interval in seconds after validator has caught up to (head-trail) height")
+	stateValidatorCmd.PersistentFlags().String("from-block", "1", "block height to initiate state validation")
+	stateValidatorCmd.PersistentFlags().String("trail", "64", "trail of block height to validate")
+	stateValidatorCmd.PersistentFlags().String("retry-interval", "10s", "retry interval in seconds after validator has caught up to (head-trail) height")
 	stateValidatorCmd.PersistentFlags().Bool("statediff-missing-block", false, "whether to perform a statediffing call on a missing block")
-	stateValidatorCmd.PersistentFlags().Uint("statediff-timeout", 240, "statediffing call timeout period (in sec)")
+	stateValidatorCmd.PersistentFlags().String("statediff-timeout", "240s", "statediffing call timeout period (in sec)")
 
 	stateValidatorCmd.PersistentFlags().String("eth-chain-config", "", "path to json chain config")
 	stateValidatorCmd.PersistentFlags().String("eth-chain-id", "1", "eth chain id")
 	stateValidatorCmd.PersistentFlags().String("eth-http-path", "", "http url for a statediffing node")
 
-	_ = viper.BindPFlag("validate.blockHeight", stateValidatorCmd.PersistentFlags().Lookup("block-height"))
+	_ = viper.BindPFlag("validate.fromBlock", stateValidatorCmd.PersistentFlags().Lookup("from-block"))
 	_ = viper.BindPFlag("validate.trail", stateValidatorCmd.PersistentFlags().Lookup("trail"))
-	_ = viper.BindPFlag("validate.sleepInterval", stateValidatorCmd.PersistentFlags().Lookup("sleep-interval"))
+	_ = viper.BindPFlag("validate.retryInterval", stateValidatorCmd.PersistentFlags().Lookup("retry-interval"))
 	_ = viper.BindPFlag("validate.stateDiffMissingBlock", stateValidatorCmd.PersistentFlags().Lookup("statediff-missing-block"))
 	_ = viper.BindPFlag("validate.stateDiffTimeout", stateValidatorCmd.PersistentFlags().Lookup("statediff-timeout"))
 

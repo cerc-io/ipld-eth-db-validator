@@ -25,7 +25,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/cerc-io/ipld-eth-db-validator/pkg/prom"
+	"github.com/cerc-io/ipld-eth-db-validator/v5/pkg/prom"
 )
 
 var (
@@ -50,24 +50,7 @@ func Execute() {
 }
 
 func initFunc(cmd *cobra.Command, args []string) {
-	logfile := viper.GetString("log.file")
-	if logfile != "" {
-		file, err := os.OpenFile(logfile,
-			os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-		if err == nil {
-			log.Infof("Directing output to %s", logfile)
-			log.SetOutput(file)
-		} else {
-			log.SetOutput(os.Stdout)
-			log.Info("Failed to log to file, using default stdout")
-		}
-	} else {
-		log.SetOutput(os.Stdout)
-	}
-
-	if err := logLevel(); err != nil {
-		log.Fatal("Could not set log level: ", err)
-	}
+	ParseLogFlags()
 
 	if viper.GetBool("prom.metrics") {
 		log.Info("initializing prometheus metrics")
@@ -91,7 +74,7 @@ func init() {
 	viper.AutomaticEnv()
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file location")
-	rootCmd.PersistentFlags().String("database-name", "vulcanize_public", "database name")
+	rootCmd.PersistentFlags().String("database-name", "cerc_public", "database name")
 	rootCmd.PersistentFlags().Int("database-port", 5432, "database port")
 	rootCmd.PersistentFlags().String("database-hostname", "localhost", "database hostname")
 	rootCmd.PersistentFlags().String("database-user", "", "database user")
@@ -118,17 +101,4 @@ func init() {
 	_ = viper.BindPFlag("prom.httpAddr", rootCmd.PersistentFlags().Lookup("prom-httpAddr"))
 	_ = viper.BindPFlag("prom.httpPort", rootCmd.PersistentFlags().Lookup("prom-httpPort"))
 	_ = viper.BindPFlag("prom.dbStats", rootCmd.PersistentFlags().Lookup("prom-dbStats"))
-}
-
-func logLevel() error {
-	lvl, err := log.ParseLevel(viper.GetString("log.level"))
-	if err != nil {
-		return err
-	}
-	log.SetLevel(lvl)
-	if lvl > log.InfoLevel {
-		log.SetReportCaller(true)
-	}
-	log.Info("Log level set to ", lvl.String())
-	return nil
 }

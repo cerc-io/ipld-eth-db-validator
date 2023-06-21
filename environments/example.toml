@@ -1,21 +1,22 @@
 [database]
-    name     = "vulcanize_public"
+    name     = "cerc_public"
     hostname = "localhost"
     port     = 5432
     password = "password"
     user     = "vdbm"
 
 [validate]
-    blockHeight = 1
-    trail  = 16
-    sleepInterval = 10
+    fromBlock = 1
+    trail = 64
+    retryInterval = "10s"
     stateDiffMissingBlock = true
-    stateDiffTimeout = 240
+    stateDiffTimeout = "240s"
 
 [ethereum]
     chainConfig = ""
     chainID = "1"
     httpPath = "localhost:8545"
+    wsPath = "localhost:8546"
 
 [prom]
     metrics = true

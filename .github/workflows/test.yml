@@ -1,0 +1,57 @@
+name: Unit and integration tests
+on:
+  workflow_call:
+
+jobs:
+  unit-tests:
+    name: "Run unit tests"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
+          check-latest: true
+      - name: "Run DB container"
+        run: |
+          docker compose -f test/compose-db.yml up --wait --quiet-pull
+      - name: "Run tests"
+        run: |
+          go test -v ./pkg/...
+
+  integration-tests:
+    name: "Run integration tests"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
+          check-latest: true
+      - name: "Install stack-orchestrator"
+        uses: actions/checkout@v3
+        with:
+          repository: cerc-io/stack-orchestrator
+          ref: v1.1.0-ff616db-202305310811 # first tag with merged changes for this stack
+          path: ./stack-orchestrator
+      - run: pip install ./stack-orchestrator
+      - name: "Run testnet stack"
+        run: ./scripts/integration-setup.sh
+      - name: "Run contract deployer"
+        run: |
+          docker compose -f test/compose-deployer.yml up --wait --quiet-pull
+      - name: "Build package and wait for testnet"
+        run: |
+          go build ./... &
+          # Start validator at current head, but not before Merge (block 1 on test chain)
+          echo "Waiting for chain head to progress..."
+          while
+              height=$(./scripts/get-block-number.sh $ETH_HTTP_PATH)
+              [[ "$height" < 2 ]];
+          do sleep 5; done
+          echo "Chain has reached block $height"
+          echo VALIDATE_FROM_BLOCK=$height >> "$GITHUB_ENV"
+          wait $!
+      - name: "Run tests"
+        run: |
+          go test -v ./integration/...

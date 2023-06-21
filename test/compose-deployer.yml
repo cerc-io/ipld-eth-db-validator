@@ -1,0 +1,19 @@
+# Runs the test contract deployment server
+
+services:
+  contract-deployer:
+    restart: on-failure
+    image: cerc/ipld-eth-db-validator/contract-deployer
+    build: ./contract
+    networks:
+      - test_default
+    environment:
+      ETH_ADDR: "http://fixturenet-eth-geth-1:8545"
+      ETH_CHAIN_ID: $ETH_CHAIN_ID
+      DEPLOYER_PRIVATE_KEY: $DEPLOYER_PRIVATE_KEY
+    ports:
+      - 127.0.0.1:3000:3000
+
+networks:
+  test_default:
+    external: true
