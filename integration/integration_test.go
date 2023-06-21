@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	timeout            = 20 * time.Minute
+	timeout            = 10 * time.Minute
 	pollInterval       = time.Second
 	progressBufferSize = 200
 )
