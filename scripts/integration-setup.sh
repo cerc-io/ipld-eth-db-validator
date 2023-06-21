@@ -2,10 +2,6 @@
 
 set -ex
 
-export DOCKER_BUILDKIT=1
-# Prevent conflicting tty output
-export BUILDKIT_PROGRESS=plain
-
 CONFIG_DIR=$(readlink -f "${CONFIG_DIR:-$(mktemp -d)}")
 
 # By default assume we are running in the project root

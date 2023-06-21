@@ -38,29 +38,20 @@ jobs:
       - name: "Run testnet stack"
         run: ./scripts/integration-setup.sh
       - name: "Run contract deployer"
-        env:
-          ETH_CHAIN_ID: ${{ env.ETH_CHAIN_ID }}
-          DEPLOYER_PRIVATE_KEY: ${{ env.DEPLOYER_PRIVATE_KEY }}
-          ETH_HTTP_PATH: ${{ env.ETH_HTTP_PATH }}
-        timeout-minutes: 20
         run: |
           docker compose -f test/compose-deployer.yml up --wait --quiet-pull
       - name: "Build package and wait for testnet"
         run: |
           go build ./... &
           # Start validator at current head, but not before Merge (block 1 on test chain)
+          echo "Waiting for chain head to progress..."
           while
               height=$(./scripts/get-block-number.sh $ETH_HTTP_PATH)
               [[ "$height" < 2 ]];
-          do
-            echo "Waiting for chain head to progress..."
-            sleep 5
-          done
+          do sleep 5; done
+          echo "Chain has reached block $height"
           echo VALIDATE_FROM_BLOCK=$height >> "$GITHUB_ENV"
           wait $!
       - name: "Run tests"
-        env:
-          ETH_CHAIN_CONFIG: ${{ env.ETH_CHAIN_CONFIG }}
-          VALIDATE_FROM_BLOCK: ${{ env.VALIDATE_FROM_BLOCK }}
         run: |
           go test -v -timeout 20m ./integration/...
