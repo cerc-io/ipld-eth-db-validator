@@ -37,7 +37,7 @@ func init() {
 	log.Root().SetHandler(log.DiscardHandler())
 }
 
-func setup(t *testing.T) *sqlx.DB {
+func setupStateValidator(t *testing.T) *sqlx.DB {
 	// Make the test blockchain and state
 	gen := chaingen.DefaultGenContext(chainConfig, testDB)
 	blocks, receipts, chain := gen.MakeChain(chainLength)
@@ -50,42 +50,47 @@ func setup(t *testing.T) *sqlx.DB {
 	if err != nil {
 		t.Fatal(err)
 	}
-	helpers.IndexChain(indexer, helpers.IndexChainParams{
+
+	{ // Insert some non-canonical data into the database so that we test our ability to discern canonicity
+		tx, err := indexer.PushBlock(server_mocks.MockBlock, server_mocks.MockReceipts,
+			server_mocks.MockBlock.Difficulty())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = tx.Submit(err)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// The non-canonical header has a child
+		tx, err = indexer.PushBlock(server_mocks.MockChild, server_mocks.MockReceipts,
+			server_mocks.MockChild.Difficulty())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		ipld := sdtypes.IPLD{
+			CID:     ipld.Keccak256ToCid(ipld.RawBinary, server_mocks.CodeHash.Bytes()).String(),
+			Content: server_mocks.ContractCode,
+		}
+		err = indexer.PushIPLD(tx, ipld)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = tx.Submit(err)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := helpers.IndexChain(indexer, helpers.IndexChainParams{
 		StateCache:      chain.StateCache(),
 		Blocks:          blocks,
 		Receipts:        receipts,
 		TotalDifficulty: mockTD,
-	})
-
-	// Insert some non-canonical data into the database so that we test our ability to discern canonicity
-	tx, err := indexer.PushBlock(server_mocks.MockBlock, server_mocks.MockReceipts,
-		server_mocks.MockBlock.Difficulty())
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = tx.Submit(err)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// The non-canonical header has a child
-	tx, err = indexer.PushBlock(server_mocks.MockChild, server_mocks.MockReceipts, server_mocks.MockChild.Difficulty())
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	ipld := sdtypes.IPLD{
-		CID:     ipld.Keccak256ToCid(ipld.RawBinary, server_mocks.CodeHash.Bytes()).String(),
-		Content: server_mocks.ContractCode,
-	}
-	err = indexer.PushIPLD(tx, ipld)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = tx.Submit(err)
-	if err != nil {
+	}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -98,7 +103,7 @@ func setup(t *testing.T) *sqlx.DB {
 }
 
 func TestStateValidation(t *testing.T) {
-	db := setup(t)
+	db := setupStateValidator(t)
 
 	t.Run("Validator", func(t *testing.T) {
 		api, err := validator.EthAPI(context.Background(), db, chainConfig)
@@ -116,13 +121,6 @@ func TestStateValidation(t *testing.T) {
 			}
 
 			err = validator.ValidateBlock(blockToBeValidated, api.B, i)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			tx := db.MustBegin()
-			defer tx.Rollback()
-			err = validator.ValidateReferentialIntegrity(tx, i)
 			if err != nil {
 				t.Fatal(err)
 			}

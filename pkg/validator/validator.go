@@ -304,7 +304,7 @@ func applyTransactions(block *types.Block, backend *ipldeth.Backend) (*ipldstate
 	nrOrHash := rpc.BlockNumberOrHash{BlockHash: &parentHash}
 	statedb, _, err := backend.IPLDTrieStateDBAndHeaderByNumberOrHash(context.Background(), nrOrHash)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error accessing state DB: %w", err)
 	}
 
 	var gp core.GasPool
@@ -319,7 +319,7 @@ func applyTransactions(block *types.Block, backend *ipldeth.Backend) (*ipldstate
 	for i, tx := range block.Transactions() {
 		msg, err := core.TransactionToMessage(tx, signer, block.BaseFee())
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error converting transaction to message: %w", err)
 		}
 		statedb.SetTxContext(tx.Hash(), i)
 		statedb.Prepare(rules, msg.From, block.Coinbase(), msg.To, nil, nil)
