@@ -140,8 +140,8 @@ github.com/cerc-io/go-ethereum v1.11.6-statediff-5.0.8-alpha h1:fgCXE7wM7Sy3Ioe6
 github.com/cerc-io/go-ethereum v1.11.6-statediff-5.0.8-alpha/go.mod h1:Jc6zFIJJFvhRMDxbj7kfUFlg6NbSQiS4RyEMDavuF1w=
 github.com/cerc-io/ipfs-ethdb/v5 v5.0.1-alpha h1:Q+GgPclJeuArafBSJofHmkVOVKkkyxu5qu5gORYAv1E=
 github.com/cerc-io/ipfs-ethdb/v5 v5.0.1-alpha/go.mod h1:EGAdV/YewEADFDDVF1k9GNwy8vNWR29Xb87sRHgMIng=
-github.com/cerc-io/ipld-eth-server/v5 v5.0.0-alpha h1:4BcZZd9NsXNQyffD53RhNkbeC2OqXwMFGpFhtNqMCWU=
-github.com/cerc-io/ipld-eth-server/v5 v5.0.0-alpha/go.mod h1:bNZ/mgRWVHc3zP2zRIDJqqH7D6HRan7GZXhzZgT99j8=
+github.com/cerc-io/ipld-eth-server/v5 v5.0.1-alpha h1:P01+2SOxMLTwP/mjF46ohOAMtygmnXTcFA9LNtPVBDg=
+github.com/cerc-io/ipld-eth-server/v5 v5.0.1-alpha/go.mod h1:IKMTYwo0pj4bs/7NY8BGb8cmmjhqMdkp0IIN4R1CzcU=
 github.com/cerc-io/ipld-eth-statedb v0.0.5-alpha h1:olsE5OCvfTrQGLE5T2Z4VYOfx8n5ONgciKdEW5I0x3I=
 github.com/cerc-io/ipld-eth-statedb v0.0.5-alpha/go.mod h1:6XprlGrhm65KkHesgcLwgIHWD0TvbkQ3T9ZsfBXKvsk=
 github.com/cespare/cp v0.1.0 h1:SE+dxFebS7Iik5LK0tsi1k9ZCxEaFX4AjQmoyA+1dJk=

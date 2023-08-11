@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/cerc-io/ipfs-ethdb/v5 v5.0.1-alpha
-	github.com/cerc-io/ipld-eth-server/v5 v5.0.0-alpha
+	github.com/cerc-io/ipld-eth-server/v5 v5.0.1-alpha
 	github.com/cerc-io/ipld-eth-statedb v0.0.5-alpha
 	github.com/ethereum/go-ethereum v1.11.6
 	github.com/jmoiron/sqlx v1.3.5
