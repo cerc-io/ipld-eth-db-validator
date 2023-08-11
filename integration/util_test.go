@@ -6,7 +6,7 @@ import (
 
 type atomicBlockSet struct {
 	blocks map[uint64]struct{}
-	sync.Mutex
+	sync.RWMutex
 }
 
 func newBlockSet() *atomicBlockSet {
@@ -14,14 +14,10 @@ func newBlockSet() *atomicBlockSet {
 }
 
 func (set *atomicBlockSet) contains(block uint64) bool {
-	set.Lock()
-	defer set.Unlock()
-	for done := range set.blocks {
-		if done == block {
-			return true
-		}
-	}
-	return false
+	set.RLock()
+	defer set.RUnlock()
+	_, has := set.blocks[block]
+	return has
 }
 
 func (set *atomicBlockSet) containsAll(blocks []uint64) bool {
