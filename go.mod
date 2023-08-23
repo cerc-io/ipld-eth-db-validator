@@ -4,9 +4,9 @@ go 1.19
 
 require (
 	github.com/cerc-io/ipfs-ethdb/v5 v5.0.1-alpha
-	github.com/cerc-io/ipld-eth-server/v5 v5.0.0-alpha
+	github.com/cerc-io/ipld-eth-server/v5 v5.0.1-alpha
 	github.com/cerc-io/ipld-eth-statedb v0.0.5-alpha
-	github.com/ethereum/go-ethereum v1.11.5
+	github.com/ethereum/go-ethereum v1.11.6
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/onsi/ginkgo/v2 v2.9.2
 	github.com/onsi/gomega v1.27.4
@@ -266,6 +266,7 @@ require (
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
@@ -274,4 +275,4 @@ require (
 	lukechampine.com/blake3 v1.1.7 // indirect
 )
 
-replace github.com/ethereum/go-ethereum => github.com/cerc-io/go-ethereum v1.11.5-statediff-5.0.5-alpha
+replace github.com/ethereum/go-ethereum => github.com/cerc-io/go-ethereum v1.11.6-statediff-5.0.8-alpha

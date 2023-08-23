@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -64,29 +65,33 @@ func IndexChain(indexer interfaces.StateDiffIndexer, params IndexChainParams) er
 
 		diff, err := builder.BuildStateDiffObject(args, params.StateDiffParams)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to build diff (block %d): %w", block.Number(), err)
 		}
 		tx, err := indexer.PushBlock(block, rcts, params.TotalDifficulty)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to index block (block %d): %w", block.Number(), err)
 		}
 
 		if !params.SkipStateNodes {
 			for _, node := range diff.Nodes {
 				if err = indexer.PushStateNode(tx, node, block.Hash().String()); err != nil {
-					return err
+					if err != nil {
+						return fmt.Errorf("failed to index state node: %w", err)
+					}
 				}
 			}
 		}
 		if !params.SkipIPLDs {
 			for _, ipld := range diff.IPLDs {
 				if err := indexer.PushIPLD(tx, ipld); err != nil {
-					return err
+					if err != nil {
+						return fmt.Errorf("failed to index IPLD: %w", err)
+					}
 				}
 			}
 		}
 		if err = tx.Submit(err); err != nil {
-			return err
+			return fmt.Errorf("failed to commit diff: %w", err)
 		}
 	}
 	return nil

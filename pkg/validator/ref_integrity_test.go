@@ -240,6 +240,14 @@ var _ = Describe("referential integrity", func() {
 		})
 	})
 
+	Describe("ValidateReferentialIntegrity", func() {
+		It("Validates referential integrity of full chain", func() {
+			for i := uint64(startBlock); i <= chainLength; i++ {
+				err := validator.ValidateReferentialIntegrity(tx, i)
+				Expect(err).ToNot(HaveOccurred())
+			}
+		})
+	})
 })
 
 func deleteEntriesFrom(tx *sqlx.Tx, tableName string) error {
