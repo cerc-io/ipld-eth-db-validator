@@ -3,11 +3,11 @@ package chaingen
 import (
 	"math/big"
 
+	"github.com/cerc-io/plugeth-statediff/test_helpers"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/statediff/test_helpers"
 
 	"github.com/cerc-io/ipld-eth-db-validator/v5/internal/testdata"
 )

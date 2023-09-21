@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/cerc-io/plugeth-statediff"
+	"github.com/cerc-io/plugeth-statediff/adapt"
+	"github.com/cerc-io/plugeth-statediff/indexer"
+	"github.com/cerc-io/plugeth-statediff/indexer/interfaces"
+	"github.com/cerc-io/plugeth-statediff/indexer/node"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/statediff"
-	"github.com/ethereum/go-ethereum/statediff/indexer"
-	"github.com/ethereum/go-ethereum/statediff/indexer/interfaces"
-	"github.com/ethereum/go-ethereum/statediff/indexer/node"
 )
 
 func TestStateDiffIndexer(ctx context.Context, chainConfig *params.ChainConfig, genHash common.Hash) (interfaces.StateDiffIndexer, error) {
@@ -41,7 +42,7 @@ type IndexChainParams struct {
 }
 
 func IndexChain(indexer interfaces.StateDiffIndexer, params IndexChainParams) error {
-	builder := statediff.NewBuilder(params.StateCache)
+	builder := statediff.NewBuilder(adapt.GethStateView(params.StateCache))
 	// iterate over the blocks, generating statediff payloads, and transforming the data into Postgres
 	for i, block := range params.Blocks {
 		var args statediff.Args

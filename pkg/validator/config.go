@@ -20,12 +20,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cerc-io/plugeth-statediff/indexer/database/sql/postgres"
+	"github.com/cerc-io/plugeth-statediff/utils"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/spf13/viper"
-
-	"github.com/ethereum/go-ethereum/statediff/indexer/database/sql/postgres"
 )
 
 type Config struct {
@@ -82,11 +81,11 @@ func (c *Config) setupEth() error {
 	var err error
 	chainConfigPath := viper.GetString("ethereum.chainConfig")
 	if chainConfigPath != "" {
-		c.ChainConfig, err = statediff.LoadConfig(chainConfigPath)
+		c.ChainConfig, err = utils.LoadConfig(chainConfigPath)
 	} else {
 		// read chainID if chain config path not provided
 		chainID := viper.GetUint64("ethereum.chainID")
-		c.ChainConfig, err = statediff.ChainConfig(chainID)
+		c.ChainConfig, err = utils.ChainConfig(chainID)
 	}
 	if err != nil {
 		return err

@@ -25,6 +25,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cerc-io/plugeth-statediff"
+	"github.com/cerc-io/plugeth-statediff/indexer/database/sql/postgres"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/clique"
@@ -34,8 +36,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ethereum/go-ethereum/statediff"
-	"github.com/ethereum/go-ethereum/statediff/indexer/database/sql/postgres"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 

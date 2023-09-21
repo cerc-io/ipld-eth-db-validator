@@ -24,13 +24,13 @@ func TestRefIntegrity(t *testing.T) {
 	RunSpecs(t, "ETH IPLD validator ref integrity suite test")
 }
 
-var _ = Describe("referential integrity", func() {
+var _ = Describe("referential integrity", Ordered, func() {
 	var (
 		db           *sqlx.DB
 		tx           *sqlx.Tx
 		checkedBlock *types.Block // Generated block of interest
 	)
-	BeforeEach(func() {
+	BeforeAll(func() {
 		var (
 			blocks      []*types.Block
 			receipts    []types.Receipts
@@ -66,12 +66,12 @@ var _ = Describe("referential integrity", func() {
 		checkedBlock = blocks[5]
 
 		db = helpers.SetupDB()
-		tx = db.MustBegin()
 	})
+	AfterAll(func() { helpers.TearDownDB(db) })
 
+	BeforeEach(func() { tx = db.MustBegin() })
 	AfterEach(func() {
 		tx.Rollback()
-		helpers.TearDownDB(db)
 	})
 
 	Describe("ValidateHeaderCIDsRef", func() {

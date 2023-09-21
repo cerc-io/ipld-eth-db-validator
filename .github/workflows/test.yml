@@ -1,10 +1,24 @@
 name: Unit and integration tests
 on:
-  workflow_call:
+  # workflow_call:
+
+  # Job headers are hidden when not top-level - run them directly for readability until fixed:
+  # https://github.com/go-gitea/gitea/issues/26736
+  pull_request:
+    branches: '*'
+  push:
+    branches:
+      - main
+      - ci-test
+
+env:
+  # Needed until we can incorporate docker startup into the executor container
+  DOCKER_HOST: unix:///var/run/dind.sock
+  SO_VERSION: v1.1.0-e0b5318-202309201927   # contains fixes for plugeth stack
 
 jobs:
   unit-tests:
-    name: "Run unit tests"
+    name: Run unit tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -12,15 +26,23 @@ jobs:
         with:
           go-version-file: 'go.mod'
           check-latest: true
-      - name: "Run DB container"
+      - name: Run dockerd
+        run: |
+          dockerd -H $DOCKER_HOST --userland-proxy=false &
+          sleep 5
+      - name: Run DB container
         run: |
           docker compose -f test/compose-db.yml up --wait --quiet-pull
-      - name: "Run tests"
+      - name: Set access token
+        env:
+          TOKEN: ${{ secrets.CICD_REPO_TOKEN }}
         run: |
-          go test -v ./pkg/...
+          git config --global url."https://$TOKEN:@git.vdb.to/".insteadOf https://git.vdb.to/
+      - name: Run tests
+        run: go test -p 1 -v ./pkg/...
 
   integration-tests:
-    name: "Run integration tests"
+    name: Run integration tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -28,21 +50,41 @@ jobs:
         with:
           go-version-file: 'go.mod'
           check-latest: true
-      - name: "Install stack-orchestrator"
+      - name: Run dockerd
+        run: |
+          dockerd -H $DOCKER_HOST --userland-proxy=false &
+          sleep 5
+      - name: Set Gitea access token
+        env:
+          TOKEN: ${{ secrets.CICD_REPO_TOKEN }}
+        run: |
+          git config --global url."https://$TOKEN:@git.vdb.to/".insteadOf https://git.vdb.to/
+
+      - name: Install jq
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: apt-get update && apt-get install -y jq
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install stack-orchestrator
         uses: actions/checkout@v3
         with:
           repository: cerc-io/stack-orchestrator
-          ref: v1.1.0-ff616db-202305310811 # first tag with merged changes for this stack
+          ref: ${{ env.SO_VERSION }}
           path: ./stack-orchestrator
       - run: pip install ./stack-orchestrator
-      - name: "Run testnet stack"
+
+      - name: Run testnet stack
+        env:
+          CERC_GO_AUTH_TOKEN: ${{ secrets.CICD_REPO_TOKEN }}
         run: ./scripts/integration-setup.sh
-      - name: "Run contract deployer"
+      - name: Run contract deployer
         run: |
           docker compose -f test/compose-deployer.yml up --wait --quiet-pull
-      - name: "Build package and wait for testnet"
+      - name: Wait for testnet
         run: |
-          go build ./... &
           # Start validator at current head, but not before Merge (block 1 on test chain)
           echo "Waiting for chain head to progress..."
           while
@@ -51,7 +93,6 @@ jobs:
           do sleep 5; done
           echo "Chain has reached block $height"
           echo VALIDATE_FROM_BLOCK=$height >> "$GITHUB_ENV"
-          wait $!
-      - name: "Run tests"
+      - name: Run tests
         run: |
-          go test -v ./integration/...
+          go test ./integration/... -v -timeout=20m

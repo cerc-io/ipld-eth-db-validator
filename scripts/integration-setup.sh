@@ -1,28 +1,31 @@
 #!/bin/bash
+# Builds and deploys a stack with only what we need.
+# This script assumes we are running in the project root.
 
-set -ex
+set -e
 
 CONFIG_DIR=$(readlink -f "${CONFIG_DIR:-$(mktemp -d)}")
 
-# By default assume we are running in the project root
+# Point stack-orchestrator to the multi-project root
 export CERC_REPO_BASE_DIR="${CERC_REPO_BASE_DIR:-..}"
 # v5 migrations only go up to version 18
 echo CERC_STATEDIFF_DB_GOOSE_MIN_VER=18 >> $CONFIG_DIR/stack.env
 
-laconic_so="${LACONIC_SO:-laconic-so} --stack fixturenet-eth-loaded --quiet"
+laconic_so="${LACONIC_SO:-laconic-so} --stack fixturenet-plugeth-tx --verbose"
 
 set -x
 
-# Build and deploy a cluster with only what we need from the stack
-$laconic_so setup-repositories \
-    --exclude github.com/cerc-io/ipld-eth-server,github.com/cerc-io/tx-spammer \
-    --branches-file ./test/stack-refs.txt
+if [[ -z $SKIP_BUILD ]]; then
+    $laconic_so setup-repositories \
+        --exclude github.com/cerc-io/ipld-eth-server,github.com/cerc-io/tx-spammer,github.com/dboreham/foundry \
+        --branches-file ./test/stack-refs.txt
 
-$laconic_so build-containers \
-    --exclude cerc/ipld-eth-server,cerc/keycloak,cerc/tx-spammer
+    $laconic_so build-containers \
+        --exclude cerc/ipld-eth-server,cerc/keycloak,cerc/tx-spammer,cerc/foundry
+fi
 
 $laconic_so deploy \
-    --include fixturenet-eth,ipld-eth-db \
+    --include fixturenet-plugeth,ipld-eth-db \
     --env-file $CONFIG_DIR/stack.env \
     --cluster test up
 
@@ -47,6 +50,6 @@ export PGPASSWORD=password
 query_blocks_exist='SELECT exists(SELECT block_number FROM ipld.blocks LIMIT 1);'
 
 echo "Waiting until we have some data written..."
-until [[ "$(psql -qtA cerc_testing -h localhost -U vdbm -p 8077 -c "$query_blocks_exist")" = 't' ]]; do
+until [[ "$(psql -qtA cerc_testing -h localhost -U vdbm -p 8077 -c "$query_blocks_exist")" -eq 't' ]]; do
     sleep 2
 done

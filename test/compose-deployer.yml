@@ -3,7 +3,7 @@
 services:
   contract-deployer:
     restart: on-failure
-    image: cerc/ipld-eth-db-validator/contract-deployer
+    image: cerc/ipld-eth-db-validator/contract-deployer:local
     build: ./contract
     networks:
       - test_default

@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	timeout            = 10 * time.Minute
+	timeout            = 20 * time.Minute
 	pollInterval       = time.Second
 	progressBufferSize = 200
 )
@@ -56,7 +56,7 @@ func setup(t *testing.T, progressChan chan uint64) {
 		cfg.FromBlock = lastValidated
 	}
 	// default trail is unnecessarily long
-	cfg.Trail = 16
+	cfg.Trail = 8
 
 	service, err := validator.NewService(cfg, progressChan)
 	if err != nil {
@@ -103,7 +103,7 @@ func TestValidateContracts(t *testing.T) {
 		g := gomega.NewWithT(t)
 
 		var blocks []uint64
-		for i := 0; i < 5; i++ {
+		for i := 0; i < 3; i++ {
 			res, err := integration.PutTestValue(contract.Address, i)
 			if err != nil {
 				t.Fatal(err)

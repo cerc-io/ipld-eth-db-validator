@@ -7,11 +7,11 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
+	"github.com/cerc-io/plugeth-statediff/indexer/ipld"
+	sdtypes "github.com/cerc-io/plugeth-statediff/types"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ethereum/go-ethereum/statediff/indexer/ipld"
-	sdtypes "github.com/ethereum/go-ethereum/statediff/types"
 
 	// import server helpers for non-canonical chain data
 	server_mocks "github.com/cerc-io/ipld-eth-server/v5/pkg/eth/test_helpers"

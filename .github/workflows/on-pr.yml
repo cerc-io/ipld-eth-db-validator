@@ -1,6 +1,0 @@
-name: Run tests for PR
-on: [pull_request]
-
-jobs:
-  run-tests:
-    uses: ./.github/workflows/test.yml
