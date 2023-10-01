@@ -51,14 +51,17 @@ func setupStateValidator(t *testing.T) *sqlx.DB {
 		t.Fatal(err)
 	}
 
-	{ // Insert some non-canonical data into the database so that we test our ability to discern canonicity
+	// Insert some non-canonical data into the database so that we test our ability to discern canonicity
+	// Use a func here for defer
+	func() {
 		tx, err := indexer.PushBlock(server_mocks.MockBlock, server_mocks.MockReceipts,
 			server_mocks.MockBlock.Difficulty())
 		if err != nil {
 			t.Fatal(err)
 		}
+		defer tx.RollbackOnFailure(err)
 
-		err = tx.Submit(err)
+		err = tx.Submit()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -69,6 +72,7 @@ func setupStateValidator(t *testing.T) *sqlx.DB {
 		if err != nil {
 			t.Fatal(err)
 		}
+		defer tx.RollbackOnFailure(err)
 
 		ipld := sdtypes.IPLD{
 			CID:     ipld.Keccak256ToCid(ipld.RawBinary, server_mocks.CodeHash.Bytes()).String(),
@@ -79,11 +83,11 @@ func setupStateValidator(t *testing.T) *sqlx.DB {
 			t.Fatal(err)
 		}
 
-		err = tx.Submit(err)
+		err = tx.Submit()
 		if err != nil {
 			t.Fatal(err)
 		}
-	}
+	}()
 
 	if err := helpers.IndexChain(indexer, helpers.IndexChainParams{
 		StateCache:      chain.StateCache(),

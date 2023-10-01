@@ -24,7 +24,7 @@ func TestStateDiffIndexer(ctx context.Context, chainConfig *params.ChainConfig, 
 		ClientName:   "geth",
 		ChainID:      chainConfig.ChainID.Uint64(),
 	}
-	_, indexer, err := indexer.NewStateDiffIndexer(ctx, chainConfig, testInfo, TestDBConfig)
+	_, indexer, err := indexer.NewStateDiffIndexer(ctx, chainConfig, testInfo, TestDBConfig, true)
 	return indexer, err
 }
 
@@ -72,6 +72,7 @@ func IndexChain(indexer interfaces.StateDiffIndexer, params IndexChainParams) er
 		if err != nil {
 			return fmt.Errorf("failed to index block (block %d): %w", block.Number(), err)
 		}
+		defer tx.RollbackOnFailure(err)
 
 		if !params.SkipStateNodes {
 			for _, node := range diff.Nodes {
@@ -91,7 +92,7 @@ func IndexChain(indexer interfaces.StateDiffIndexer, params IndexChainParams) er
 				}
 			}
 		}
-		if err = tx.Submit(err); err != nil {
+		if err = tx.Submit(); err != nil {
 			return fmt.Errorf("failed to commit diff: %w", err)
 		}
 	}
