@@ -6,6 +6,8 @@ import (
 	"math/big"
 	"testing"
 
+	indexer_helpers "github.com/cerc-io/plugeth-statediff/indexer/test_helpers"
+	helpers "github.com/cerc-io/plugeth-statediff/test_helpers"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/rawdb"
@@ -15,7 +17,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/cerc-io/ipld-eth-db-validator/v5/internal/chaingen"
-	"github.com/cerc-io/ipld-eth-db-validator/v5/internal/helpers"
 	"github.com/cerc-io/ipld-eth-db-validator/v5/pkg/validator"
 )
 
@@ -55,7 +56,7 @@ var _ = Describe("referential integrity", Ordered, func() {
 		})
 		blocks, receipts, chain = gen.MakeChain(5)
 
-		indexer, err := helpers.TestStateDiffIndexer(context.Background(), chainConfig, gen.Genesis.Hash())
+		indexer, err := helpers.NewIndexer(context.Background(), chainConfig, gen.Genesis.Hash(), TestDBConfig)
 		Expect(err).ToNot(HaveOccurred())
 		helpers.IndexChain(indexer, helpers.IndexChainParams{
 			StateCache:      chain.StateCache(),
@@ -65,9 +66,9 @@ var _ = Describe("referential integrity", Ordered, func() {
 		})
 		checkedBlock = blocks[5]
 
-		db = helpers.SetupDB()
+		db = SetupDB()
 	})
-	AfterAll(func() { helpers.TearDownDB(db) })
+	AfterAll(func() { Expect(indexer_helpers.ClearSqlxDB(db)).ToNot(HaveOccurred()) })
 
 	BeforeEach(func() { tx = db.MustBegin() })
 	AfterEach(func() {

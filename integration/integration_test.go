@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cerc-io/plugeth-statediff/indexer/database/sql/postgres"
 	"github.com/onsi/gomega"
 	. "github.com/onsi/gomega"
 
 	"github.com/cerc-io/ipld-eth-db-validator/v5/cmd" // this registers env vars with viper
 	"github.com/cerc-io/ipld-eth-db-validator/v5/integration"
-	"github.com/cerc-io/ipld-eth-db-validator/v5/internal/helpers"
 	"github.com/cerc-io/ipld-eth-db-validator/v5/pkg/validator"
 )
 
@@ -50,7 +50,7 @@ func setup(t *testing.T, progressChan chan uint64) {
 		t.Fatal(err)
 	}
 	// set the default DB config to the testing defaults
-	cfg.DBConfig, _ = helpers.TestDBConfig.WithEnv()
+	cfg.DBConfig, _ = postgres.TestConfig.WithEnv()
 	// update the start block if we have already validated past it
 	if lastValidated > cfg.FromBlock {
 		cfg.FromBlock = lastValidated

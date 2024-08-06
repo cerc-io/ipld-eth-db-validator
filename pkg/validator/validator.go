@@ -25,7 +25,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cerc-io/plugeth-statediff"
+	statediff "github.com/cerc-io/plugeth-statediff"
 	"github.com/cerc-io/plugeth-statediff/indexer/database/sql/postgres"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
@@ -36,6 +36,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/holiman/uint256"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
@@ -246,13 +247,13 @@ func ethBackend(db *sqlx.DB, c *ipldeth.Config) (*ipldeth.Backend, error) {
 		ExpiryDuration: time.Minute * time.Duration(gcc.StateDB.CacheExpiryInMins),
 	})
 	// Read only wrapper around ipfs-ethdb eth.Database implementation
-	customEthDB := newDatabase(ethDB)
+	ethDB = newDatabase(ethDB)
 
 	return &ipldeth.Backend{
 		DB:                    db,
 		Retriever:             r,
-		EthDB:                 customEthDB,
-		IpldTrieStateDatabase: ipldstate.NewDatabase(customEthDB),
+		EthDB:                 ethDB,
+		IpldTrieStateDatabase: ipldstate.NewDatabase(ethDB),
 		Config:                c,
 	}, nil
 }
@@ -294,10 +295,13 @@ func (s *Service) writeStateDiffAt(height uint64) error {
 
 // applyTransaction attempts to apply block transactions to the given state database
 // and uses the input parameters for its environment. It returns the stateDB of parent with applied txs.
+//
+// Note: this skips the DAO hard fork refund
 func applyTransactions(block *types.Block, backend *ipldeth.Backend) (*ipldstate.StateDB, error) {
 	if block.NumberU64() == 0 {
 		return nil, errors.New("no transaction in genesis")
 	}
+	config := backend.Config.ChainConfig
 
 	// Create the parent state database
 	parentHash := block.ParentHash()
@@ -310,10 +314,13 @@ func applyTransactions(block *types.Block, backend *ipldeth.Backend) (*ipldstate
 	var gp core.GasPool
 	gp.AddGas(block.GasLimit())
 
-	signer := types.MakeSigner(backend.Config.ChainConfig, block.Number())
 	blockContext := core.NewEVMBlockContext(block.Header(), backend, getAuthor(backend, block.Header()))
-	evm := vm.NewEVM(blockContext, vm.TxContext{}, statedb, backend.Config.ChainConfig, vm.Config{})
-	rules := backend.Config.ChainConfig.Rules(block.Number(), true, block.Time())
+	evm := vm.NewEVM(blockContext, vm.TxContext{}, statedb, config, vm.Config{})
+	signer := types.MakeSigner(config, block.Number(), block.Time())
+
+	if beaconRoot := block.BeaconRoot(); beaconRoot != nil {
+		ProcessBeaconBlockRoot(*beaconRoot, evm, statedb)
+	}
 
 	// Iterate over and process the individual transactions
 	for i, tx := range block.Transactions() {
@@ -322,18 +329,31 @@ func applyTransactions(block *types.Block, backend *ipldeth.Backend) (*ipldstate
 			return nil, fmt.Errorf("error converting transaction to message: %w", err)
 		}
 		statedb.SetTxContext(tx.Hash(), i)
-		statedb.Prepare(rules, msg.From, block.Coinbase(), msg.To, nil, nil)
 
 		// Create a new context to be used in the EVM environment.
 		evm.Reset(core.NewEVMTxContext(msg), statedb)
 		// Apply the transaction to the current state (included in the env).
 		if _, err := core.ApplyMessage(evm, msg, &gp); err != nil {
-			return nil, fmt.Errorf("transaction %#x failed: %w", tx.Hash(), err)
+			return nil, fmt.Errorf("error applying tx %#x: %w", tx.Hash(), err)
+		}
+
+		if config.IsByzantium(block.Number()) {
+			statedb.Finalise(true)
+		} else {
+			statedb.IntermediateRoot(config.IsEIP158(block.Number())).Bytes()
 		}
 	}
 
-	if backend.Config.ChainConfig.Ethash != nil {
-		accumulateRewards(backend.Config.ChainConfig, statedb, block.Header(), block.Uncles())
+	// Withdrawals processing.
+	for _, w := range block.Withdrawals() {
+		// Convert amount from gwei to wei.
+		amount := new(uint256.Int).SetUint64(w.Amount)
+		amount = amount.Mul(amount, uint256.NewInt(params.GWei))
+		statedb.AddBalance(w.Address, amount)
+	}
+
+	if config.Ethash != nil {
+		accumulateRewards(config, statedb, block.Header(), block.Uncles())
 	}
 
 	return statedb, nil
@@ -354,20 +374,40 @@ func accumulateRewards(config *params.ChainConfig, state *ipldstate.StateDB, hea
 	}
 
 	// Accumulate the rewards for the miner and any included uncles
-	reward := new(big.Int).Set(blockReward)
+	reward := new(big.Int).Set(blockReward.ToBig())
 	r := new(big.Int)
 	for _, uncle := range uncles {
 		r.Add(uncle.Number, big8)
 		r.Sub(r, header.Number)
-		r.Mul(r, blockReward)
+		r.Mul(r, blockReward.ToBig())
 		r.Div(r, big8)
-		state.AddBalance(uncle.Coinbase, r)
+		state.AddBalance(uncle.Coinbase, uint256.MustFromBig(r))
 
-		r.Div(blockReward, big32)
+		r.Div(blockReward.ToBig(), big32)
 		reward.Add(reward, r)
 	}
 
-	state.AddBalance(header.Coinbase, reward)
+	state.AddBalance(header.Coinbase, uint256.MustFromBig(reward))
+}
+
+// ProcessBeaconBlockRoot applies the EIP-4788 system call to the beacon block root
+// contract. This method is exported to be used in tests.
+func ProcessBeaconBlockRoot(beaconRoot common.Hash, vmenv *vm.EVM, statedb *ipldstate.StateDB) {
+	// If EIP-4788 is enabled, we need to invoke the beaconroot storage contract with
+	// the new root
+	msg := &core.Message{
+		From:      params.SystemAddress,
+		GasLimit:  30_000_000,
+		GasPrice:  common.Big0,
+		GasFeeCap: common.Big0,
+		GasTipCap: common.Big0,
+		To:        &params.BeaconRootsStorageAddress,
+		Data:      beaconRoot[:],
+	}
+	vmenv.Reset(core.NewEVMTxContext(msg), statedb)
+	statedb.AddAddressToAccessList(params.BeaconRootsStorageAddress)
+	_, _, _ = vmenv.Call(vm.AccountRef(msg.From), *msg.To, msg.Data, 30_000_000, common.U2560)
+	statedb.Finalise(true)
 }
 
 func setChainConfig(ghash common.Hash) *params.ChainConfig {
@@ -376,8 +416,6 @@ func setChainConfig(ghash common.Hash) *params.ChainConfig {
 		return params.MainnetChainConfig
 	case ghash == params.SepoliaGenesisHash:
 		return params.SepoliaChainConfig
-	case ghash == params.RinkebyGenesisHash:
-		return params.RinkebyChainConfig
 	case ghash == params.GoerliGenesisHash:
 		return params.GoerliChainConfig
 	default:

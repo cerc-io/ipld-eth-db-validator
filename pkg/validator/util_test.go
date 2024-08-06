@@ -1,9 +1,12 @@
 package validator_test
 
 import (
+	"context"
 	"math/big"
 
+	"github.com/cerc-io/plugeth-statediff/indexer/database/sql/postgres"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/jmoiron/sqlx"
 )
 
 var TestChainConfig = &params.ChainConfig{
@@ -22,4 +25,22 @@ var TestChainConfig = &params.ChainConfig{
 	ArrowGlacierBlock:   big.NewInt(0),
 	GrayGlacierBlock:    big.NewInt(0),
 	Ethash:              new(params.EthashConfig),
+}
+
+var TestDBConfig postgres.Config
+
+func init() {
+	var err error
+	TestDBConfig, err = postgres.TestConfig.WithEnv()
+	if err != nil {
+		panic(err)
+	}
+}
+
+func SetupDB() *sqlx.DB {
+	db, err := postgres.ConnectSQLX(context.Background(), TestDBConfig)
+	if err != nil {
+		panic(err)
+	}
+	return db
 }

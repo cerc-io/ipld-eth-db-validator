@@ -5,19 +5,19 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/jmoiron/sqlx"
-
 	"github.com/cerc-io/plugeth-statediff/indexer/ipld"
+	indexer_helpers "github.com/cerc-io/plugeth-statediff/indexer/test_helpers"
+	helpers "github.com/cerc-io/plugeth-statediff/test_helpers"
 	sdtypes "github.com/cerc-io/plugeth-statediff/types"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/jmoiron/sqlx"
 
 	// import server helpers for non-canonical chain data
 	server_mocks "github.com/cerc-io/ipld-eth-server/v5/pkg/eth/test_helpers"
 
 	"github.com/cerc-io/ipld-eth-db-validator/v5/internal/chaingen"
-	"github.com/cerc-io/ipld-eth-db-validator/v5/internal/helpers"
 	"github.com/cerc-io/ipld-eth-db-validator/v5/pkg/validator"
 )
 
@@ -34,7 +34,7 @@ var (
 
 func init() {
 	// The geth sync logs are noisy, silence them
-	log.Root().SetHandler(log.DiscardHandler())
+	log.SetDefault(log.NewLogger(log.DiscardHandler()))
 }
 
 func setupStateValidator(t *testing.T) *sqlx.DB {
@@ -46,7 +46,7 @@ func setupStateValidator(t *testing.T) *sqlx.DB {
 		chain.Stop()
 	})
 
-	indexer, err := helpers.TestStateDiffIndexer(context.Background(), chainConfig, gen.Genesis.Hash())
+	indexer, err := helpers.NewIndexer(context.Background(), chainConfig, gen.Genesis.Hash(), TestDBConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,10 +98,11 @@ func setupStateValidator(t *testing.T) *sqlx.DB {
 		t.Fatal(err)
 	}
 
-	db := helpers.SetupDB()
-
+	db := SetupDB()
 	t.Cleanup(func() {
-		helpers.TearDownDB(db)
+		if err := indexer_helpers.ClearSqlxDB(db); err != nil {
+			t.Fatal(err)
+		}
 	})
 	return db
 }
@@ -121,7 +122,7 @@ func TestStateValidation(t *testing.T) {
 				t.Fatal(err)
 			}
 			if blockToBeValidated == nil {
-				t.Fatal("blockToBeValidated is nil")
+				t.Fatal("block was not found")
 			}
 
 			err = validator.ValidateBlock(blockToBeValidated, api.B, i)

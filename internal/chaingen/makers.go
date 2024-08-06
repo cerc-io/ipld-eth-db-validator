@@ -4,6 +4,7 @@ import (
 	"math/big"
 
 	"github.com/cerc-io/plugeth-statediff/test_helpers"
+	"github.com/cerc-io/plugeth-statediff/test_helpers/chaingen"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/ethdb"
@@ -16,20 +17,20 @@ var (
 	bank, acct1, acct2 common.Address
 	contractAddr       common.Address
 	contractDataRoot   string
-	defaultContract    *ContractSpec
+	defaultContract    *chaingen.ContractSpec
 )
 
 func init() {
 	var err error
-	defaultContract, err = ParseContract(testdata.TestContractABI, testdata.TestContractCode)
+	defaultContract, err = chaingen.ParseContract(testdata.TestContractABI, testdata.TestContractCode)
 	if err != nil {
 		panic(err)
 	}
 }
 
 // A GenContext which exactly replicates the chain generator used in existing tests
-func DefaultGenContext(chainConfig *params.ChainConfig, db ethdb.Database) *GenContext {
-	gen := NewGenContext(chainConfig, db)
+func DefaultGenContext(chainConfig *params.ChainConfig, db ethdb.Database) *chaingen.GenContext {
+	gen := chaingen.NewGenContext(chainConfig, db)
 	bank = gen.AddOwnedAccount(test_helpers.TestBankKey)
 	acct1 = gen.AddOwnedAccount(test_helpers.Account1Key)
 	acct2 = gen.AddOwnedAccount(test_helpers.Account2Key)
@@ -46,7 +47,7 @@ func DefaultGenContext(chainConfig *params.ChainConfig, db ethdb.Database) *GenC
 	return gen
 }
 
-func defaultChainGen(gen *GenContext, i int, block *core.BlockGen) error {
+func defaultChainGen(gen *chaingen.GenContext, i int, block *core.BlockGen) error {
 	switch i {
 	case 0:
 		// In block 1, the test bank sends account #1 some ether.

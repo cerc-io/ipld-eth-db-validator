@@ -23,6 +23,7 @@ contract Test {
     }
 
     function close() public onlyOwner {
-        owner.transfer(address(this).balance);
+        (bool ok, ) = owner.call{value: address(this).balance}("");
+        require(ok, "ETH transfer failed");
     }
 }
